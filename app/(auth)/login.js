@@ -33,6 +33,15 @@ export default function LoginScreen() {
     }
   };
 
+  // Helper to get role from email
+  const getRoleFromEmail = (email) => {
+    if (!email) return "public";
+    if (email.includes("admin")) return "admin";
+    if (email.includes("teacher")) return "teacher";
+    if (email.includes("parent")) return "parent";
+    return "public";
+  };
+
   const handleLogin = async () => {
     if (!email || !password) {
       Toast.show({
@@ -51,12 +60,14 @@ export default function LoginScreen() {
         text2: "Logged in successfully!",
       });
       
-      // Navigate based on role
-      if (userRole === "admin") {
+      // Navigate based on role from email (since state update is async)
+      const role = getRoleFromEmail(email);
+      console.log("Login role detected:", role, "Email:", email);
+      if (role === "admin") {
         router.replace("/(admin)/(tabs)");
-      } else if (userRole === "teacher") {
+      } else if (role === "teacher") {
         router.replace("/(teacher)/(tabs)");
-      } else if (userRole === "parent") {
+      } else if (role === "parent") {
         router.replace("/(parent)/(tabs)");
       } else {
         router.replace("/(public)/(tabs)");

@@ -48,9 +48,12 @@ export default function AuthProvider({ children }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      console.log("Auth state changed, user:", currentUser);
       setUser(currentUser);
       if (currentUser) {
-        setUserRole(getUserRole(currentUser.email));
+        const role = getUserRole(currentUser.email);
+        console.log("Setting user role:", role);
+        setUserRole(role);
       } else {
         setUserRole(null);
       }
