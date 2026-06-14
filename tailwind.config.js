@@ -4,6 +4,7 @@ const { platformSelect } = require('nativewind/theme');
 module.exports = {
   content: ["./app/**/*.{js,jsx,ts,tsx}", "./components/**/*.{js,jsx,ts,tsx}"],
   presets: [require("nativewind/preset")],
+  darkMode: "class",
   theme: {
     extend: {
       borderRadius: {
@@ -17,12 +18,16 @@ module.exports = {
     colors: {
     background: "#F8F5EE",
     foreground: "#1F3A32",
+    "background-dark": "#0F172A",
+    "foreground-dark": "#F1F5F9",
 
     primary: "#0F766E",
     secondary: "#E8D8A8",
 
     card: "#FFFFFF",
+    "card-dark": "#1E293B",
     border: "#E5E7EB",
+    "border-dark": "#334155",
 
     cream: "#F8F5EE",
     gold: "#C9A227",

@@ -13,34 +13,55 @@ export default function PublicLayout() {
           headerStyle: { backgroundColor: "#F8F5EE" },
           headerTintColor: "#1E3A5F",
           drawerStyle: { backgroundColor: "#F8F5EE" },
+          drawerActiveTintColor: "#C9A227",
+          drawerInactiveTintColor: "#1F3A32",
         }}
       >
+        {/* This is the main tab navigator - it will show tabs at the bottom */}
         <Drawer.Screen
           name="(tabs)"
           options={{
-            title: "Alyaqeen Academy",
+            title: "Home",
             headerTitle: "Alyaqeen Academy",
+            drawerLabel: "Home",
+          }}
+        />
+        
+        {/* Individual screens that will show without tabs */}
+        <Drawer.Screen
+          name="about"
+          options={{
+            title: "About Academy",
+            drawerLabel: "About Academy",
           }}
         />
         <Drawer.Screen
-          name="about"
-          options={{ title: "About Academy" }}
-        />
-        <Drawer.Screen
           name="vacancies"
-          options={{ title: "Vacancies" }}
+          options={{
+            title: "Vacancies",
+            drawerLabel: "Vacancies",
+          }}
         />
         <Drawer.Screen
           name="volunteer-opportunities"
-          options={{ title: "Volunteer Opportunities" }}
+          options={{
+            title: "Volunteer Opportunities",
+            drawerLabel: "Volunteer Opportunities",
+          }}
         />
         <Drawer.Screen
           name="contact"
-          options={{ title: "Contact Us" }}
+          options={{
+            title: "Contact Us",
+            drawerLabel: "Contact Us",
+          }}
         />
         <Drawer.Screen
           name="settings"
-          options={{ title: "Settings" }}
+          options={{
+            title: "Settings",
+            drawerLabel: "Settings",
+          }}
         />
       </Drawer>
     </GestureHandlerRootView>

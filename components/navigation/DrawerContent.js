@@ -8,40 +8,47 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { DrawerContentScrollView } from "@react-navigation/drawer";
 import { router, usePathname } from "expo-router";
+import useAuth from "../../hooks/useAuth";
+import Toast from "react-native-toast-message";
 
-export default function DrawerContent({ role = "public", ...props }) {
+export default function DrawerContent(props) {
   const pathname = usePathname();
+  const { user, userRole, signOutUser } = useAuth();
+  
+  // Use userRole if available, otherwise default to public
+  const currentRole = userRole || "public";
 
   const menuItems = {
     public: [
+      { label: "Home", href: "/(public)/(tabs)" },
       { label: "About Academy", href: "/(public)/about" },
       { label: "Vacancies", href: "/(public)/vacancies" },
       { label: "Volunteer Opportunities", href: "/(public)/volunteer-opportunities" },
       { label: "Contact Us", href: "/(public)/contact" },
       { label: "Settings", href: "/(public)/settings" },
-      { label: "Login", href: "/(auth)/login" },
+      user ? { label: "Logout", href: null } : { label: "Login", href: "/(auth)/login" },
     ],
     parent: [
-      { label: "Dashboard", href: "/(parent)/" },
+      { label: "Dashboard", href: "/(parent)/(tabs)" },
       { label: "Prayer Timetable", href: "/(parent)/prayer-timetable" },
       { label: "Ramadan Hub", href: "/(parent)/ramadan-hub" },
       { label: "Announcements", href: "/(parent)/announcements" },
       { label: "Events", href: "/(parent)/events" },
       { label: "Contact Us", href: "/(parent)/contact" },
       { label: "Settings", href: "/(parent)/settings" },
-      { label: "Logout", href: "/" }, // Changed to root for logout
+      { label: "Logout", href: null },
     ],
     teacher: [
-      { label: "Dashboard", href: "/(teacher)/" },
+      { label: "Dashboard", href: "/(teacher)/(tabs)" },
       { label: "Students", href: "/(teacher)/students" },
       { label: "Attendance", href: "/(teacher)/attendance" },
       { label: "Messages", href: "/(teacher)/messages" },
       { label: "Prayer Timetable", href: "/(teacher)/prayer-timetable" },
       { label: "Settings", href: "/(teacher)/settings" },
-      { label: "Logout", href: "/" },
+      { label: "Logout", href: null },
     ],
     admin: [
-      { label: "Dashboard", href: "/(admin)/" },
+      { label: "Dashboard", href: "/(admin)/(tabs)" },
       { label: "Academy", href: "/(admin)/academy" },
       { label: "Approvals", href: "/(admin)/approvals" },
       { label: "Alerts", href: "/(admin)/alerts" },
@@ -49,7 +56,7 @@ export default function DrawerContent({ role = "public", ...props }) {
       { label: "Announcement Management", href: "/(admin)/announcement-management" },
       { label: "Events", href: "/(admin)/event-management" },
       { label: "Settings", href: "/(admin)/settings" },
-      { label: "Logout", href: "/" },
+      { label: "Logout", href: null },
     ],
   };
 
@@ -59,27 +66,43 @@ export default function DrawerContent({ role = "public", ...props }) {
   };
 
   const handleLogout = async () => {
-    // Add your logout logic here
-    // Example: await logoutUser(); // Your logout function
-    
-    // Close drawer and navigate to login
-    props.navigation?.closeDrawer();
-    router.replace("/(auth)/login");
+    try {
+      await signOutUser();
+      Toast.show({
+        type: "success",
+        text1: "Success!",
+        text2: "Logged out successfully!",
+      });
+      props.navigation?.closeDrawer();
+      router.replace("/(public)/(tabs)");
+    } catch (error) {
+      Toast.show({
+        type: "error",
+        text1: "Logout Failed",
+        text2: error.message,
+      });
+    }
   };
 
-  const items = menuItems[role] || menuItems.public;
+  const items = menuItems[currentRole] || menuItems.public;
 
   return (
     <DrawerContentScrollView {...props}>
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>
-            {role === "public" ? "Alyaqeen Academy" : `${role.charAt(0).toUpperCase() + role.slice(1)} Portal`}
+            {currentRole === "public" ? "Alyaqeen Academy" : `${currentRole.charAt(0).toUpperCase() + currentRole.slice(1)} Portal`}
           </Text>
+          {user && (
+            <Text style={styles.userEmail} numberOfLines={1}>
+              {user.email}
+            </Text>
+          )}
         </View>
         <View style={styles.menu}>
           {items.map((item, index) => {
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+            if (!item) return null;
+            const isActive = item.href && (pathname === item.href || pathname.startsWith(item.href + "/"));
             
             // Handle logout separately
             if (item.label === "Logout") {
@@ -126,6 +149,11 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     color: "#1E3A5F",
+  },
+  userEmail: {
+    fontSize: 14,
+    color: "#6B7280",
+    marginTop: 8,
   },
   menu: {
     paddingHorizontal: 10,
