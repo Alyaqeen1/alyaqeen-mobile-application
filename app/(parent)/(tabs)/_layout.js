@@ -1,16 +1,15 @@
 import React from "react";
 import { Tabs } from "expo-router";
 import { Text } from "react-native";
+import FloatingTabBar from "../../../components/navigation/FloatingTabBar";
 
 export default function ParentTabsLayout() {
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: { backgroundColor: "#FFFFFF" },
-        tabBarActiveTintColor: "#C9A227",
-        tabBarInactiveTintColor: "#6B7280",
       }}
+      tabBar={(props) => <FloatingTabBar {...props} />}
     >
       <Tabs.Screen
         name="index"

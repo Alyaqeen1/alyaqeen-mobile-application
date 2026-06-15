@@ -4,16 +4,19 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { DrawerContentScrollView } from "@react-navigation/drawer";
 import { router, usePathname } from "expo-router";
 import useAuth from "../../hooks/useAuth";
+import { useTheme } from "../../contexts";
 import Toast from "react-native-toast-message";
 
 export default function DrawerContent(props) {
   const pathname = usePathname();
   const { user, userRole, signOutUser } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   
   // Use userRole if available, otherwise default to public
   const currentRole = userRole || "public";
@@ -88,16 +91,29 @@ export default function DrawerContent(props) {
 
   return (
     <DrawerContentScrollView {...props}>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: isDark ? "#0F172A" : "#F8F5EE" }]}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>
-            {currentRole === "public" ? "Alyaqeen Academy" : `${currentRole.charAt(0).toUpperCase() + currentRole.slice(1)} Portal`}
-          </Text>
-          {user && (
-            <Text style={styles.userEmail} numberOfLines={1}>
-              {user.email}
-            </Text>
-          )}
+          <Image
+            source={require("../../assets/logo.png")}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              style={styles.headerButton}
+              onPress={toggleTheme}
+            >
+              <Text style={styles.headerIcon}>{isDark ? "☀️" : "🌙"}</Text>
+            </TouchableOpacity>
+            {user && (
+              <TouchableOpacity
+                style={styles.headerButton}
+                onPress={handleLogout}
+              >
+                <Text style={styles.headerIcon}>🚪</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
         <View style={styles.menu}>
           {items.map((item, index) => {
@@ -106,15 +122,7 @@ export default function DrawerContent(props) {
             
             // Handle logout separately
             if (item.label === "Logout") {
-              return (
-                <TouchableOpacity
-                  key={index}
-                  style={styles.menuItem}
-                  onPress={handleLogout}
-                >
-                  <Text style={styles.menuItemText}>{item.label}</Text>
-                </TouchableOpacity>
-              );
+              return null; // We already have logout in header
             }
             
             return (
@@ -123,7 +131,7 @@ export default function DrawerContent(props) {
                 style={[styles.menuItem, isActive && styles.activeMenuItem]}
                 onPress={() => handleNavigation(item.href)}
               >
-                <Text style={[styles.menuItemText, isActive && styles.activeMenuItemText]}>
+                <Text style={[styles.menuItemText, { color: isDark ? "#FFFFFF" : "#1F3A32" }, isActive && styles.activeMenuItemText]}>
                   {item.label}
                 </Text>
               </TouchableOpacity>
@@ -141,19 +149,26 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: 20,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     borderBottomWidth: 1,
     borderBottomColor: "#E5E7EB",
     marginBottom: 10,
   },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#1E3A5F",
+  logo: {
+    width: 50,
+    height: 50,
   },
-  userEmail: {
-    fontSize: 14,
-    color: "#6B7280",
-    marginTop: 8,
+  headerActions: {
+    flexDirection: "row",
+    gap: 16,
+  },
+  headerButton: {
+    padding: 8,
+  },
+  headerIcon: {
+    fontSize: 24,
   },
   menu: {
     paddingHorizontal: 10,
@@ -169,7 +184,6 @@ const styles = StyleSheet.create({
   },
   menuItemText: {
     fontSize: 16,
-    color: "#1F3A32",
   },
   activeMenuItemText: {
     color: "#C9A227",

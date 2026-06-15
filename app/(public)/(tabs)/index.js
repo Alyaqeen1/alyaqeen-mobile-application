@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, FlatList, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import { View, Text, FlatList, StyleSheet, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { dummyAnnouncements } from "../../../dummy-data/announcements.js";
 import { dummyEvents } from "../../../dummy-data/events.js";
@@ -9,20 +9,10 @@ import EventCard from "../../../components/cards/EventCard.js";
 import { useTheme } from "../../../contexts";
 
 export default function PublicHomeScreen() {
-  const { isDark, toggleTheme } = useTheme();
+  const { isDark } = useTheme();
   
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: isDark ? "#0F172A" : "#F8F5EE" }]}>
-      {/* Theme Toggle */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.themeToggle}
-          onPress={toggleTheme}
-        >
-          <Text style={{ fontSize: 24 }}>{isDark ? "☀️" : "🌙"}</Text>
-        </TouchableOpacity>
-      </View>
-
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: isDark ? "#FFFFFF" : "#1E3A5F" }]}>
@@ -75,17 +65,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    paddingHorizontal: 20,
-    paddingTop: 10
-  },
-  themeToggle: {
-    padding: 8
-  },
   scrollView: {
     flex: 1,
+    paddingBottom: 120,
   },
   section: {
     paddingVertical: 16,

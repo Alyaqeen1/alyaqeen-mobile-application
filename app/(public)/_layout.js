@@ -2,19 +2,22 @@ import React from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Drawer } from "expo-router/drawer";
 import DrawerContent from "../../components/navigation/DrawerContent";
+import CustomHeader from "../../components/navigation/CustomHeader";
+import { useTheme } from "../../contexts";
 
 export default function PublicLayout() {
+  const { isDark } = useTheme();
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <Drawer
-        drawerContent={(props) => <DrawerContent role="public" {...props} />}
+        drawerContent={(props) => <DrawerContent {...props} />}
         screenOptions={{
           headerShown: true,
-          headerStyle: { backgroundColor: "#F8F5EE" },
-          headerTintColor: "#1E3A5F",
-          drawerStyle: { backgroundColor: "#F8F5EE" },
+          header: (props) => <CustomHeader {...props} />,
+          drawerStyle: { backgroundColor: isDark ? "#0F172A" : "#F8F5EE" },
           drawerActiveTintColor: "#C9A227",
-          drawerInactiveTintColor: "#1F3A32",
+          drawerInactiveTintColor: isDark ? "#FFFFFF" : "#1F3A32",
         }}
       >
         {/* This is the main tab navigator - it will show tabs at the bottom */}
@@ -22,7 +25,6 @@ export default function PublicLayout() {
           name="(tabs)"
           options={{
             title: "Home",
-            headerTitle: "Alyaqeen Academy",
             drawerLabel: "Home",
           }}
         />

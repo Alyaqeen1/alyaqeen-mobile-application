@@ -47,7 +47,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingBottom: 120,
   },
   cardWrapper: {
     marginBottom: 12,

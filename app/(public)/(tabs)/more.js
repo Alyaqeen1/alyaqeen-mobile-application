@@ -51,6 +51,7 @@ const styles = StyleSheet.create({
   },
   menu: {
     paddingHorizontal: 20,
+    paddingBottom: 120,
   },
   menuItem: {
     paddingVertical: 16,
