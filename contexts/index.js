@@ -1,17 +1,26 @@
 import React, { createContext, useContext } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { toggleTheme } from "../redux/slices/themeSlice";
+import { getThemePalette } from "../theme";
 
 const ThemeContext = createContext();
 
 export function ThemeProvider({ children }) {
-  const theme = useSelector((state) => state.theme.mode);
+  const themeMode = useSelector((state) => state.theme.mode);
   const dispatch = useDispatch();
+  const palette = getThemePalette(themeMode);
 
   const value = {
-    theme,
-    isDark: theme === "dark",
-    isLight: theme === "light",
+    theme: themeMode,
+    colors: palette,
+    gradientColors: palette.gradient,
+    gradientLocations: palette.gradientLocations,
+    glowColors: palette.glow,
+    glowStyle: palette.glowStyle,
+    blurTint: palette.blurTint,
+    blurIntensity: palette.blurIntensity,
+    isDark: themeMode === "dark",
+    isLight: themeMode === "light",
     toggleTheme: () => dispatch(toggleTheme()),
   };
 

@@ -2,9 +2,12 @@ import React, { useEffect } from "react";
 import { View, ActivityIndicator, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import useAuth from "../../hooks/useAuth";
+import { useTheme } from "../../contexts";
+import AppBackground from "../common/AppBackground";
 
 export default function ProtectedRoute({ children, allowedRoles }) {
   const { user, userRole, loading } = useAuth();
+  const { colors } = useTheme();
 
   useEffect(() => {
     if (!loading) {
@@ -20,9 +23,11 @@ export default function ProtectedRoute({ children, allowedRoles }) {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#C9A227" />
-      </View>
+      <AppBackground>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.gold} />
+        </View>
+      </AppBackground>
     );
   }
 
@@ -39,6 +44,5 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#F8F5EE",
   },
 });

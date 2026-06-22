@@ -1,28 +1,39 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
+import { useTheme } from "../../contexts";
 
 export default function DashboardStatCard({ stat }) {
+  const { colors } = useTheme();
+
   return (
-    <View style={styles.card}>
+    <View
+      style={[
+        styles.card,
+        {
+          backgroundColor: colors.surface,
+          borderColor: colors.border,
+          shadowColor: colors.shadowColor,
+        },
+      ]}
+    >
       <Text style={styles.value}>{stat.value}</Text>
-      <Text style={styles.label}>{stat.label}</Text>
+      <Text style={[styles.label, { color: colors.textMuted }]}>{stat.label}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#FFFFFF",
     borderRadius: 16,
     padding: 16,
     width: 100,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
+    borderWidth: 1,
   },
   value: {
     fontSize: 24,
@@ -32,7 +43,6 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 12,
-    color: "#6B7280",
     textAlign: "center",
   },
 });

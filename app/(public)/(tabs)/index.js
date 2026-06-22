@@ -7,63 +7,67 @@ import { dummyPrayerTimes } from "../../../dummy-data/prayerTimes.js";
 import AnnouncementCard from "../../../components/cards/AnnouncementCard.js";
 import EventCard from "../../../components/cards/EventCard.js";
 import { useTheme } from "../../../contexts";
+import AppBackground from "../../../components/common/AppBackground";
 
 export default function PublicHomeScreen() {
-  const { isDark } = useTheme();
+  const { colors } = useTheme();
   
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: isDark ? "#0F172A" : "#F8F5EE" }]}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: isDark ? "#FFFFFF" : "#1E3A5F" }]}>
-            Welcome to Alyaqeen Academy
-          </Text>
-          <Text style={[styles.sectionSubtitle, { color: isDark ? "#94A3B8" : "#6B7280" }]}>
-            Empowering minds with Islamic education
-          </Text>
-        </View>
+    <AppBackground>
+      <SafeAreaView style={styles.container}>
+        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.textStrong }]}>
+              Welcome to Alyaqeen Academy
+            </Text>
+            <Text style={[styles.sectionSubtitle, { color: colors.textMuted }]}>
+              Empowering minds with Islamic education
+            </Text>
+          </View>
 
-        <View style={styles.section}>
-          <Text style={[styles.sectionHeader, { color: isDark ? "#F1F5F9" : "#1F3A32" }]}>
-            Latest Announcements
-          </Text>
-          <FlatList
-            data={dummyAnnouncements}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={({ item }) => (
-              <View style={styles.cardWrapper}>
-                <AnnouncementCard announcement={item} />
-              </View>
-            )}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-          />
-        </View>
+          <View style={styles.section}>
+            <Text style={[styles.sectionHeader, { color: colors.text }]}>
+              Latest Announcements
+            </Text>
+            <FlatList
+              data={dummyAnnouncements}
+              keyExtractor={(item) => item.id.toString()}
+              renderItem={({ item }) => (
+                <View style={styles.cardWrapper}>
+                  <AnnouncementCard announcement={item} />
+                </View>
+              )}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+            />
+          </View>
 
-        <View style={styles.section}>
-          <Text style={[styles.sectionHeader, { color: isDark ? "#F1F5F9" : "#1F3A32" }]}>
-            Upcoming Events
-          </Text>
-          <FlatList
-            data={dummyEvents}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={({ item }) => (
-              <View style={styles.cardWrapper}>
-                <EventCard event={item} />
-              </View>
-            )}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-          />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+          <View style={styles.section}>
+            <Text style={[styles.sectionHeader, { color: colors.text }]}>
+              Upcoming Events
+            </Text>
+            <FlatList
+              data={dummyEvents}
+              keyExtractor={(item) => item.id.toString()}
+              renderItem={({ item }) => (
+                <View style={styles.cardWrapper}>
+                  <EventCard event={item} />
+                </View>
+              )}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+            />
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </AppBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "transparent",
   },
   scrollView: {
     flex: 1,

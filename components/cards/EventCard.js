@@ -1,29 +1,44 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { useTheme } from "../../contexts";
 
 export default function EventCard({ event }) {
+  const { colors } = useTheme();
+
   return (
-    <TouchableOpacity style={styles.card}>
+    <TouchableOpacity
+      style={[
+        styles.card,
+        {
+          backgroundColor: colors.surface,
+          borderColor: colors.border,
+          shadowColor: colors.shadowColor,
+        },
+      ]}
+    >
       <View style={styles.dateBadge}>
         <Text style={styles.dateBadgeText}>{event.date}</Text>
       </View>
-      <Text style={styles.title}>{event.title}</Text>
-      <Text style={styles.location}>{event.location}</Text>
+      <Text style={[styles.title, { color: colors.textStrong }]}>
+        {event.title}
+      </Text>
+      <Text style={[styles.location, { color: colors.textMuted }]}>
+        {event.location}
+      </Text>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#FFFFFF",
     borderRadius: 16,
     padding: 16,
     width: 280,
-    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
+    borderWidth: 1,
   },
   dateBadge: {
     backgroundColor: "#C9A227",
@@ -41,11 +56,9 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#1E3A5F",
     marginBottom: 4,
   },
   location: {
     fontSize: 14,
-    color: "#4B5563",
   },
 });

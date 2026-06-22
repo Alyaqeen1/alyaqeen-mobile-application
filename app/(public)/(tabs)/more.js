@@ -2,6 +2,8 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Link } from "expo-router";
+import { useTheme } from "../../../contexts";
+import AppBackground from "../../../components/common/AppBackground";
 
 const menuItems = [
   { label: "Prayer Timetable", href: "/(public)/prayer-timetable" },
@@ -16,28 +18,36 @@ const menuItems = [
 ];
 
 export default function PublicMoreScreen() {
+  const { colors } = useTheme();
+
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>More</Text>
-      </View>
-      <View style={styles.menu}>
-        {menuItems.map((item, index) => (
-          <Link key={index} href={item.href} asChild>
-            <TouchableOpacity style={styles.menuItem}>
-              <Text style={styles.menuItemText}>{item.label}</Text>
-            </TouchableOpacity>
-          </Link>
-        ))}
-      </View>
-    </SafeAreaView>
+    <AppBackground>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <Text style={[styles.title, { color: colors.textStrong }]}>More</Text>
+        </View>
+        <View style={styles.menu}>
+          {menuItems.map((item, index) => (
+            <Link key={index} href={item.href} asChild>
+              <TouchableOpacity
+                style={[styles.menuItem, { borderBottomColor: colors.divider }]}
+              >
+                <Text style={[styles.menuItemText, { color: colors.text }]}>
+                  {item.label}
+                </Text>
+              </TouchableOpacity>
+            </Link>
+          ))}
+        </View>
+      </SafeAreaView>
+    </AppBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F5EE",
+    backgroundColor: "transparent",
   },
   header: {
     paddingHorizontal: 20,
@@ -47,7 +57,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#1E3A5F",
   },
   menu: {
     paddingHorizontal: 20,
@@ -56,10 +65,8 @@ const styles = StyleSheet.create({
   menuItem: {
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
   },
   menuItemText: {
     fontSize: 16,
-    color: "#1F3A32",
   },
 });

@@ -4,8 +4,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { dummyStudents } from "../../../dummy-data/students.js";
 import DashboardStatCard from "../../../components/cards/DashboardStatCard.js";
 import StudentCard from "../../../components/cards/StudentCard.js";
+import { useTheme } from "../../../contexts";
+import AppBackground from "../../../components/common/AppBackground";
 
 export default function TeacherDashboardScreen() {
+  const { colors } = useTheme();
   const stats = [
     { label: "Students", value: "25" },
     { label: "Attendance", value: "88%" },
@@ -13,36 +16,44 @@ export default function TeacherDashboardScreen() {
   ];
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={styles.section}>
-          <Text style={styles.greeting}>Welcome, Teacher!</Text>
-          <Text style={styles.subtitle}>Here's what's happening in your class</Text>
-        </View>
+    <AppBackground>
+      <SafeAreaView style={styles.container}>
+        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+          <View style={styles.section}>
+            <Text style={[styles.greeting, { color: colors.textStrong }]}>
+              Welcome, Teacher!
+            </Text>
+            <Text style={[styles.subtitle, { color: colors.textMuted }]}>
+              Here's what's happening in your class
+            </Text>
+          </View>
 
-        <View style={styles.statsSection}>
-          {stats.map((stat, index) => (
-            <DashboardStatCard key={index} stat={stat} />
-          ))}
-        </View>
+          <View style={styles.statsSection}>
+            {stats.map((stat, index) => (
+              <DashboardStatCard key={index} stat={stat} />
+            ))}
+          </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Your Students</Text>
-          {dummyStudents.map((student) => (
-            <View key={student.id} style={styles.cardWrapper}>
-              <StudentCard student={student} />
-            </View>
-          ))}
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              Your Students
+            </Text>
+            {dummyStudents.map((student) => (
+              <View key={student.id} style={styles.cardWrapper}>
+                <StudentCard student={student} />
+              </View>
+            ))}
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </AppBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F5EE",
+    backgroundColor: "transparent",
   },
   scrollView: {
     flex: 1,
@@ -55,17 +66,14 @@ const styles = StyleSheet.create({
   greeting: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#1E3A5F",
     marginBottom: 4,
   },
   subtitle: {
     fontSize: 16,
-    color: "#6B7280",
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#1F3A32",
     marginBottom: 12,
   },
   statsSection: {

@@ -8,6 +8,7 @@ export default function TeacherTabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
+        sceneStyle: { backgroundColor: "transparent" },
       }}
       tabBar={(props) => <FloatingTabBar {...props} />}
     >

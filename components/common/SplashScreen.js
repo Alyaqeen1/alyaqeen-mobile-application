@@ -1,24 +1,23 @@
-import React, { useRef, useState } from "react";
-import {
-  View,
-  Text,
-  Image,
-  StyleSheet,
-  TouchableOpacity,
-  Animated,
-  Dimensions,
-  Platform,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  GestureDetector,
-  Gesture,
-  Directions,
-} from "react-native-gesture-handler";
+import React, { useState, useRef } from "react";
+import { View, Text, Image, StyleSheet, Dimensions } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { GestureDetector, Gesture } from "react-native-gesture-handler";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  runOnJS,
+  useDerivedValue,
+  interpolate,
+  Extrapolate,
+  useAnimatedReaction,
+} from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { BlurView } from "expo-blur";
+import { useTheme } from "../../contexts";
+import AppBackground from "./AppBackground";
+import ThemeToggleButton from "./ThemeToggleButton";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -26,9 +25,13 @@ const KNOB_SIZE = 52;
 const TRACK_PADDING = 6;
 
 export default function SplashScreen({ onFinish }) {
-  const swipeAnim = useRef(new Animated.Value(0)).current;
-  const opacityAnim = useRef(new Animated.Value(1)).current;
-  const chevronAnim = useRef(new Animated.Value(0)).current;
+  const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+
+  // Reanimated shared values
+  const translateX = useSharedValue(0);
+  const opacity = useSharedValue(1);
+  const chevronProgress = useSharedValue(0);
 
   const [trackWidth, setTrackWidth] = useState(SCREEN_WIDTH - 40);
   const hasTriggeredThresholdHaptic = useRef(false);
@@ -36,25 +39,36 @@ export default function SplashScreen({ onFinish }) {
   const maxTranslate = Math.max(trackWidth - KNOB_SIZE - TRACK_PADDING * 2, 1);
   const swipeThreshold = maxTranslate * 0.75;
 
-  // Looping chevron pulse animation to draw attention
+  // Looping chevron pulse animation
   React.useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(chevronAnim, {
-          toValue: 1,
-          duration: 700,
-          useNativeDriver: true,
-        }),
-        Animated.timing(chevronAnim, {
-          toValue: 0,
-          duration: 700,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [chevronAnim]);
+    let isMounted = true;
+    let animationFrame;
+
+    const animateChevrons = () => {
+      if (!isMounted) return;
+
+      chevronProgress.value = withTiming(1, { duration: 700 });
+
+      setTimeout(() => {
+        if (!isMounted) return;
+        chevronProgress.value = withTiming(0, { duration: 700 });
+
+        setTimeout(() => {
+          if (!isMounted) return;
+          animateChevrons();
+        }, 100);
+      }, 700);
+    };
+
+    animateChevrons();
+
+    return () => {
+      isMounted = false;
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
+      }
+    };
+  }, []);
 
   const handleComplete = () => {
     try {
@@ -63,167 +77,164 @@ export default function SplashScreen({ onFinish }) {
       // Ignore haptics errors
     }
 
-    Animated.parallel([
-      Animated.timing(opacityAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(swipeAnim, {
-        toValue: maxTranslate,
-        duration: 250,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      onFinish && onFinish();
+    opacity.value = withTiming(0, { duration: 300 });
+    translateX.value = withTiming(maxTranslate, { duration: 250 }, () => {
+      runOnJS(onFinish)();
     });
   };
 
   const resetSwipe = () => {
     hasTriggeredThresholdHaptic.current = false;
-    Animated.spring(swipeAnim, {
-      toValue: 0,
-      friction: 8,
-      tension: 40,
-      useNativeDriver: true,
-    }).start();
+    translateX.value = withSpring(0, {
+      damping: 8,
+      stiffness: 40,
+    });
   };
 
-  const swipeGesture = Gesture.Fling()
-    .direction(Directions.RIGHT)
-    .onEnd(handleComplete);
+  // Haptic feedback when crossing threshold
+  useAnimatedReaction(
+    () => translateX.value,
+    (current) => {
+      const shouldTrigger =
+        current >= swipeThreshold && !hasTriggeredThresholdHaptic.current;
+      const shouldReset =
+        current < swipeThreshold && hasTriggeredThresholdHaptic.current;
 
+      if (shouldTrigger) {
+        hasTriggeredThresholdHaptic.current = true;
+        runOnJS(() => {
+          try {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          } catch (error) {}
+        });
+      } else if (shouldReset) {
+        hasTriggeredThresholdHaptic.current = false;
+        runOnJS(() => {
+          try {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          } catch (error) {}
+        });
+      }
+    },
+  );
+
+  // Pan gesture for dragging the knob
   const panGesture = Gesture.Pan()
     .onUpdate((event) => {
       const next = Math.min(Math.max(event.translationX, 0), maxTranslate);
-      swipeAnim.setValue(next);
-
-      // Vibration feedback as the knob crosses the threshold
-      if (next >= swipeThreshold && !hasTriggeredThresholdHaptic.current) {
-        hasTriggeredThresholdHaptic.current = true;
-        try {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        } catch (error) {}
-      } else if (next < swipeThreshold && hasTriggeredThresholdHaptic.current) {
-        hasTriggeredThresholdHaptic.current = false;
-        try {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        } catch (error) {}
-      }
+      translateX.value = next;
     })
     .onEnd((event) => {
       const next = Math.min(Math.max(event.translationX, 0), maxTranslate);
       if (next >= swipeThreshold) {
-        handleComplete();
+        runOnJS(handleComplete)();
       } else {
-        resetSwipe();
+        runOnJS(resetSwipe)();
       }
     });
 
-  const combinedGesture = Gesture.Race(panGesture, swipeGesture);
-
-  // Fade out the label/chevrons as the knob slides over them
-  const labelOpacity = swipeAnim.interpolate({
-    inputRange: [0, maxTranslate * 0.6],
-    outputRange: [1, 0],
-    extrapolate: "clamp",
+  // Tap gesture for accessibility (click to complete)
+  const tapGesture = Gesture.Tap().onEnd(() => {
+    runOnJS(handleComplete)();
   });
 
-  const chevronTranslate = chevronAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 6],
+  // Combine gestures - Pan takes priority, Tap is fallback
+  const combinedGesture = Gesture.Race(panGesture, tapGesture);
+
+  // Animated styles
+  const knobStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }],
+  }));
+
+  const containerStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+  }));
+
+  const labelOpacity = useDerivedValue(() => {
+    return interpolate(
+      translateX.value,
+      [0, maxTranslate * 0.6],
+      [1, 0],
+      Extrapolate.CLAMP,
+    );
   });
+
+  const labelStyle = useAnimatedStyle(() => ({
+    opacity: labelOpacity.value,
+  }));
+
+  const chevronTranslateX = useDerivedValue(() => {
+    return interpolate(chevronProgress.value, [0, 1], [0, 6]);
+  });
+
+  const chevron1Style = useAnimatedStyle(() => ({
+    transform: [{ translateX: chevronTranslateX.value }],
+  }));
+
+  const chevron2Style = useAnimatedStyle(() => ({
+    transform: [{ translateX: chevronTranslateX.value }],
+  }));
 
   return (
-    <GestureDetector gesture={combinedGesture}>
-      <TouchableOpacity
-        style={styles.container}
-        activeOpacity={1}
-        onPress={handleComplete}
-      >
-        <LinearGradient
-          colors={["#F8F5EE", "#F8F5EE"]}
-          style={{ flex: 1 }}
-        >
-          {/* Soft Golden Glow at the top */}
-          <View pointerEvents="none" style={styles.glowWrap}>
-            <LinearGradient
-              colors={[
-                "rgba(201, 162, 39, 0.25)",
-                "rgba(201, 162, 39, 0.1)",
-                "rgba(201, 162, 39, 0)",
-              ]}
-              start={{ x: 0.5, y: 0 }}
-              end={{ x: 0.5, y: 1 }}
-              style={styles.glowGradient}
+    <View style={styles.container}>
+      <AppBackground>
+        <SafeAreaView style={styles.safeArea}>
+          <ThemeToggleButton
+            accessibilityLabel="Toggle app theme on splash screen"
+            style={[styles.themeToggle, { top: insets.top + 12 }]}
+          />
+          <Animated.View style={[styles.content, containerStyle]}>
+            <Image
+              source={require("../../assets/logo.png")}
+              style={styles.logo}
+              resizeMode="contain"
             />
-            {Platform.OS !== "web" && (
-              <BlurView
-                intensity={40}
-                tint="light"
-                style={StyleSheet.absoluteFill}
-              />
-            )}
-          </View>
+            <Text style={[styles.title, { color: colors.text }]}>
+              Alyaqeen Academy
+            </Text>
+            <Text style={[styles.subtitle, { color: colors.textMuted }]}>
+              Three Interconnected{"\n"}Educational Program
+            </Text>
 
-          <SafeAreaView style={styles.safeArea}>
-            <Animated.View style={[styles.content, { opacity: opacityAnim }]}>
-              <Image
-                source={require("../../assets/logo.png")}
-                style={styles.logo}
-                resizeMode="contain"
-              />
-              <Text style={styles.title}>Alyaqeen Academy</Text>
-              <Text style={styles.subtitle}>
-                Three Interconnected{`\n`}Educational Program
-              </Text>
-
-              {/* Pill-shaped swipe track */}
-              <View
-                style={styles.swipeTrack}
-                onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width)}
-              >
-                {/* Centered label + chevrons */}
-                <Animated.View
-                  style={[styles.swipeLabelWrap, { opacity: labelOpacity }]}
-                >
-                  <Text style={styles.swipeText}>SWIPE TO START</Text>
-                  <Animated.View
-                    style={{ transform: [{ translateX: chevronTranslate }] }}
-                  >
-                    <Ionicons name="chevron-forward" size={18} color="#FFFFFF" />
-                  </Animated.View>
-                  <Animated.View
-                    style={{
-                      marginLeft: -10,
-                      transform: [{ translateX: chevronTranslate }],
-                    }}
-                  >
-                    <Ionicons
-                      name="chevron-forward"
-                      size={18}
-                      color="rgba(255,255,255,0.5)"
-                    />
-                  </Animated.View>
+            {/* Pill-shaped swipe track */}
+            <View
+              style={[
+                styles.swipeTrack,
+                {
+                  backgroundColor: colors.goldSoft,
+                  borderColor: colors.border,
+                },
+              ]}
+              onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width)}
+            >
+              {/* Centered label + chevrons */}
+              <Animated.View style={[styles.swipeLabelWrap, labelStyle]}>
+                <Text style={[styles.swipeText, { color: colors.text }]}>
+                  SWIPE TO START
+                </Text>
+                <Animated.View style={chevron1Style}>
+                  <Ionicons name="chevron-forward" size={18} color="#FFFFFF" />
                 </Animated.View>
-
-                {/* Sliding circular knob */}
-                <Animated.View
-                  style={[
-                    styles.swipeKnob,
-                    {
-                      transform: [{ translateX: swipeAnim }],
-                    },
-                  ]}
-                >
-                  <Ionicons name="walk" size={26} color="#0F172A" />
+                <Animated.View style={[chevron2Style, { marginLeft: -10 }]}>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={18}
+                    color="rgba(255,255,255,0.5)"
+                  />
                 </Animated.View>
-              </View>
-            </Animated.View>
-          </SafeAreaView>
-        </LinearGradient>
-      </TouchableOpacity>
-    </GestureDetector>
+              </Animated.View>
+
+              {/* Sliding circular knob */}
+              <GestureDetector gesture={combinedGesture}>
+                <Animated.View style={[styles.swipeKnob, knobStyle]}>
+                  <Ionicons name="walk" size={26} color={colors.background} />
+                </Animated.View>
+              </GestureDetector>
+            </View>
+          </Animated.View>
+        </SafeAreaView>
+      </AppBackground>
+    </View>
   );
 }
 
@@ -234,18 +245,11 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  glowWrap: {
+  themeToggle: {
     position: "absolute",
-    top: -120,
-    left: -80,
-    right: -80,
-    height: 500,
-    borderRadius: 300,
-    overflow: "hidden",
-    zIndex: 0,
-  },
-  glowGradient: {
-    flex: 1,
+    top: 12,
+    right: 20,
+    zIndex: 20,
   },
   content: {
     flex: 1,
@@ -273,15 +277,11 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 24,
   },
-
-  // Pill track
   swipeTrack: {
     width: "100%",
     height: 64,
     borderRadius: 32,
-    backgroundColor: "rgba(201, 162, 39, 0.15)",
     borderWidth: 1,
-    borderColor: "rgba(201, 162, 39, 0.35)",
     justifyContent: "center",
     overflow: "hidden",
   },
@@ -292,17 +292,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 4,
   },
   swipeText: {
     fontSize: 14,
     letterSpacing: 2,
-    color: "#1F3A32",
     fontWeight: "600",
     marginRight: 4,
   },
-
-  // Circular sliding knob
   swipeKnob: {
     position: "absolute",
     left: TRACK_PADDING,

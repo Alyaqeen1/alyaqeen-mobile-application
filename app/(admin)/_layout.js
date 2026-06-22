@@ -5,30 +5,34 @@ import DrawerContent from "../../components/navigation/DrawerContent";
 import ProtectedRoute from "../../components/navigation/ProtectedRoute";
 import CustomHeader from "../../components/navigation/CustomHeader";
 import { useTheme } from "../../contexts";
+import AppBackground from "../../components/common/AppBackground";
 
 export default function AdminLayout() {
-  const { isDark } = useTheme();
+  const { colors } = useTheme();
 
   return (
     <ProtectedRoute allowedRoles={["admin"]}>
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <Drawer
-          drawerContent={(props) => <DrawerContent {...props} />}
-          screenOptions={{
-            headerShown: true,
-            header: (props) => <CustomHeader {...props} />,
-            drawerStyle: { backgroundColor: isDark ? "#0F172A" : "#F8F5EE" },
-            drawerActiveTintColor: "#C9A227",
-            drawerInactiveTintColor: isDark ? "#FFFFFF" : "#1F3A32",
-          }}
-        >
-          <Drawer.Screen
-            name="(tabs)"
-            options={{
-              title: "Admin Portal",
+        <AppBackground>
+          <Drawer
+            drawerContent={(props) => <DrawerContent {...props} />}
+            screenOptions={{
+              headerShown: true,
+              header: (props) => <CustomHeader {...props} />,
+              drawerStyle: { backgroundColor: colors.drawerBackground },
+              sceneStyle: { backgroundColor: "transparent" },
+              drawerActiveTintColor: colors.gold,
+              drawerInactiveTintColor: colors.text,
             }}
-          />
-        </Drawer>
+          >
+            <Drawer.Screen
+              name="(tabs)"
+              options={{
+                title: "Admin Portal",
+              }}
+            />
+          </Drawer>
+        </AppBackground>
       </GestureHandlerRootView>
     </ProtectedRoute>
   );

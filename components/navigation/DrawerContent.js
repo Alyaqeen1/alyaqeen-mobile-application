@@ -9,14 +9,16 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { DrawerContentScrollView } from "@react-navigation/drawer";
 import { router, usePathname } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import useAuth from "../../hooks/useAuth";
 import { useTheme } from "../../contexts";
 import Toast from "react-native-toast-message";
+import ThemeToggleButton from "../common/ThemeToggleButton";
 
 export default function DrawerContent(props) {
   const pathname = usePathname();
   const { user, userRole, signOutUser } = useAuth();
-  const { isDark, toggleTheme } = useTheme();
+  const { isDark, colors } = useTheme();
   
   // Use userRole if available, otherwise default to public
   const currentRole = userRole || "public";
@@ -91,26 +93,36 @@ export default function DrawerContent(props) {
 
   return (
     <DrawerContentScrollView {...props}>
-      <SafeAreaView style={[styles.container, { backgroundColor: isDark ? "#0F172A" : "#F8F5EE" }]}>
-        <View style={styles.header}>
+      <SafeAreaView
+        style={[styles.container, { backgroundColor: colors.drawerBackground }]}
+      >
+        <View
+          style={[
+            styles.header,
+            { borderBottomColor: colors.border },
+          ]}
+        >
           <Image
             source={require("../../assets/logo.png")}
             style={styles.logo}
             resizeMode="contain"
           />
           <View style={styles.headerActions}>
-            <TouchableOpacity
-              style={styles.headerButton}
-              onPress={toggleTheme}
-            >
-              <Text style={styles.headerIcon}>{isDark ? "☀️" : "🌙"}</Text>
-            </TouchableOpacity>
+            <ThemeToggleButton style={styles.headerButton} />
             {user && (
               <TouchableOpacity
-                style={styles.headerButton}
+                accessibilityRole="button"
+                accessibilityLabel="Log out"
+                style={[
+                  styles.logoutButton,
+                  {
+                    backgroundColor: colors.surfaceSoft,
+                    borderColor: colors.border,
+                  },
+                ]}
                 onPress={handleLogout}
               >
-                <Text style={styles.headerIcon}>🚪</Text>
+                <Ionicons color={colors.gold} name="log-out-outline" size={22} />
               </TouchableOpacity>
             )}
           </View>
@@ -128,10 +140,22 @@ export default function DrawerContent(props) {
             return (
               <TouchableOpacity
                 key={index}
-                style={[styles.menuItem, isActive && styles.activeMenuItem]}
+                style={[
+                  styles.menuItem,
+                  {
+                    borderColor: colors.border,
+                    backgroundColor: isActive ? colors.goldSoft : "transparent",
+                  },
+                ]}
                 onPress={() => handleNavigation(item.href)}
               >
-                <Text style={[styles.menuItemText, { color: isDark ? "#FFFFFF" : "#1F3A32" }, isActive && styles.activeMenuItemText]}>
+                <Text
+                  style={[
+                    styles.menuItemText,
+                    { color: isDark ? colors.textStrong : colors.text },
+                    isActive && styles.activeMenuItemText,
+                  ]}
+                >
                   {item.label}
                 </Text>
               </TouchableOpacity>
@@ -163,12 +187,19 @@ const styles = StyleSheet.create({
   headerActions: {
     flexDirection: "row",
     gap: 16,
+    alignItems: "center",
   },
   headerButton: {
-    padding: 8,
+    width: 44,
+    height: 44,
   },
-  headerIcon: {
-    fontSize: 24,
+  logoutButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
   menu: {
     paddingHorizontal: 10,
@@ -178,9 +209,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     borderRadius: 8,
     marginVertical: 2,
-  },
-  activeMenuItem: {
-    backgroundColor: "#C9A22720",
+    borderWidth: 1,
   },
   menuItemText: {
     fontSize: 16,

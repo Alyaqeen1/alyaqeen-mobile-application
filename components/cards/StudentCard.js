@@ -1,15 +1,31 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { useTheme } from "../../contexts";
 
 export default function StudentCard({ student }) {
+  const { colors } = useTheme();
+
   return (
-    <TouchableOpacity style={styles.card}>
+    <TouchableOpacity
+      style={[
+        styles.card,
+        {
+          backgroundColor: colors.surface,
+          borderColor: colors.border,
+          shadowColor: colors.shadowColor,
+        },
+      ]}
+    >
       <View style={styles.avatar}>
         <Text style={styles.avatarText}>{student.name.charAt(0)}</Text>
       </View>
       <View style={styles.info}>
-        <Text style={styles.name}>{student.name}</Text>
-        <Text style={styles.grade}>{student.grade}</Text>
+        <Text style={[styles.name, { color: colors.textStrong }]}>
+          {student.name}
+        </Text>
+        <Text style={[styles.grade, { color: colors.textMuted }]}>
+          {student.grade}
+        </Text>
       </View>
     </TouchableOpacity>
   );
@@ -17,16 +33,15 @@ export default function StudentCard({ student }) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#FFFFFF",
     borderRadius: 16,
     padding: 16,
     flexDirection: "row",
     alignItems: "center",
-    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
+    borderWidth: 1,
   },
   avatar: {
     width: 50,
@@ -48,10 +63,8 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#1E3A5F",
   },
   grade: {
     fontSize: 14,
-    color: "#6B7280",
   },
 });

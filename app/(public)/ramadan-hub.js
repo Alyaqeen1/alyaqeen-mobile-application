@@ -1,34 +1,17 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { View, Text } from "react-native";
+import { ScreenContainer } from "../../components/common/ScreenContainer";
 
 export default function PublicRamadanHubScreen() {
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Ramadan Hub</Text>
-        <Text style={styles.subtitle}>Ramadan resources and information</Text>
+    <ScreenContainer>
+      <View className="flex-1 items-center justify-center px-6">
+        <Text className="text-2xl font-semibold text-foreground">
+          Ramadan Hub
+        </Text>
+        <Text className="text-muted-foreground">
+          Ramadan resources and information
+        </Text>
       </View>
-    </SafeAreaView>
+    </ScreenContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F8F5EE",
-  },
-  content: {
-    padding: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#1E3A5F",
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#6B7280",
-    marginTop: 4,
-  },
-});

@@ -1,45 +1,92 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Switch } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useTheme } from "../../contexts";
+import AppBackground from "../../components/common/AppBackground";
 
 export default function PublicSettingsScreen() {
+  const { colors } = useTheme();
   const [isNotificationsEnabled, setIsNotificationsEnabled] = React.useState(true);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Settings</Text>
+    <AppBackground>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.content}>
+          <Text style={[styles.title, { color: colors.textStrong }]}>Settings</Text>
 
-        <View style={styles.section}>
-          <View style={styles.settingItem}>
-            <Text style={styles.settingLabel}>Enable Notifications</Text>
-            <Switch
-              value={isNotificationsEnabled}
-              onValueChange={setIsNotificationsEnabled}
-              trackColor={{ false: "#E5E7EB", true: "#C9A227" }}
-              thumbColor="#FFFFFF"
-            />
+          <View style={styles.section}>
+            <View
+              style={[
+                styles.settingItem,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                  shadowColor: colors.shadowColor,
+                },
+              ]}
+            >
+              <Text style={[styles.settingLabel, { color: colors.text }]}>
+                Enable Notifications
+              </Text>
+              <Switch
+                value={isNotificationsEnabled}
+                onValueChange={setIsNotificationsEnabled}
+                trackColor={{ false: "#E5E7EB", true: "#C9A227" }}
+                thumbColor="#FFFFFF"
+              />
+            </View>
           </View>
-        </View>
 
-        <TouchableOpacity style={styles.menuItem}>
-          <Text style={styles.menuItemText}>About App</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem}>
-          <Text style={styles.menuItemText}>Privacy Policy</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem}>
-          <Text style={styles.menuItemText}>Terms of Service</Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+          <TouchableOpacity
+            style={[
+              styles.menuItem,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+                shadowColor: colors.shadowColor,
+              },
+            ]}
+          >
+            <Text style={[styles.menuItemText, { color: colors.text }]}>About App</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.menuItem,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+                shadowColor: colors.shadowColor,
+              },
+            ]}
+          >
+            <Text style={[styles.menuItemText, { color: colors.text }]}>
+              Privacy Policy
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.menuItem,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+                shadowColor: colors.shadowColor,
+              },
+            ]}
+          >
+            <Text style={[styles.menuItemText, { color: colors.text }]}>
+              Terms of Service
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    </AppBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F5EE",
+    backgroundColor: "transparent",
   },
   content: {
     padding: 20,
@@ -47,42 +94,37 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#1E3A5F",
     marginBottom: 24,
   },
   section: {
     marginBottom: 16,
   },
   settingItem: {
-    backgroundColor: "#FFFFFF",
     borderRadius: 16,
     padding: 16,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 1,
+    borderWidth: 1,
   },
   settingLabel: {
     fontSize: 16,
-    color: "#1F3A32",
   },
   menuItem: {
-    backgroundColor: "#FFFFFF",
     borderRadius: 12,
     padding: 16,
     marginBottom: 8,
-    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 1,
+    borderWidth: 1,
   },
   menuItemText: {
     fontSize: 16,
-    color: "#1F3A32",
   },
 });

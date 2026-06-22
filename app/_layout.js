@@ -4,13 +4,18 @@ import { Provider } from "react-redux";
 import { store } from "../redux/store";
 import SplashScreen from "../components/common/SplashScreen";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { ThemeProvider, useTheme } from "../contexts";
+import { ThemeProvider } from "../contexts";
 import AuthProvider from "../contexts/AuthContext";
 import Toast from "react-native-toast-message";
 import "../global.css";
 
 function ThemedApp() {
-  const { isDark } = useTheme();
+  const [isSplashVisible, setIsSplashVisible] = useState(true);
+
+  if (isSplashVisible) {
+    return <SplashScreen onFinish={() => setIsSplashVisible(false)} />;
+  }
+
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(auth)" options={{ headerShown: false }} />
@@ -23,24 +28,16 @@ function ThemedApp() {
 }
 
 export default function RootLayout() {
-  const [isSplashVisible, setIsSplashVisible] = useState(true);
-
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      {isSplashVisible ? (
-        <SplashScreen onFinish={() => setIsSplashVisible(false)} />
-      ) : (
-        <>
-          <Provider store={store}>
-            <AuthProvider>
-              <ThemeProvider>
-                <ThemedApp />
-              </ThemeProvider>
-            </AuthProvider>
-          </Provider>
-          <Toast />
-        </>
-      )}
+      <Provider store={store}>
+        <AuthProvider>
+          <ThemeProvider>
+            <ThemedApp />
+            <Toast />
+          </ThemeProvider>
+        </AuthProvider>
+      </Provider>
     </GestureHandlerRootView>
   );
 }

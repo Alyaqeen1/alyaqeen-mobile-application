@@ -1,17 +1,27 @@
 import React from "react";
 import { View, TouchableOpacity, Text, StyleSheet } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../contexts";
 
 export default function FloatingTabBar({ state, descriptors, navigation }) {
-  const { isDark } = useTheme();
+  const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
 
-  const activeTabBackgroundColor = isDark ? "#1E293B" : "#FFFFFF";
-  const inactiveTabBackgroundColor = isDark ? "#1E293B" : "#FFFFFF";
+  const activeTabBackgroundColor = colors.surfaceSoft;
+  const inactiveTabBackgroundColor = "transparent";
   const activeTextColor = "#C9A227";
-  const inactiveTextColor = isDark ? "#94A3B8" : "#6B7280";
+  const inactiveTextColor = colors.textMuted;
 
   return (
-    <View style={[styles.container, { backgroundColor: isDark ? "#1E293B" : "#FFFFFF" }]}>
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: "transparent",
+          bottom: insets.bottom + 8,
+        },
+      ]}
+    >
       {state.routes.map((route, index) => {
         const { options } = descriptors[route.key];
         const label =
@@ -89,17 +99,11 @@ const styles = StyleSheet.create({
     bottom: 20,
     left: 20,
     right: 20,
-    borderRadius: 30,
     flexDirection: "row",
     justifyContent: "space-around",
     alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 12,
+    paddingVertical: 6,
+    paddingHorizontal: 0,
   },
   tabItem: {
     flex: 1,
@@ -107,7 +111,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: 8,
     paddingHorizontal: 4,
-    borderRadius: 20,
+    borderRadius: 18,
   },
   activeTabItem: {
     backgroundColor: "transparent",

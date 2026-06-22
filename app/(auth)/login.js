@@ -13,17 +13,19 @@ import {
   TouchableWithoutFeedback,
   ScrollView,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { useTheme } from "../../contexts";
 import { LinearGradient } from "expo-linear-gradient";
 import useAuth from "../../hooks/useAuth";
 import Toast from "react-native-toast-message";
 import { Ionicons } from "@expo/vector-icons";
-import { BlurView } from "expo-blur";
+import AppBackground from "../../components/common/AppBackground";
+import ThemeToggleButton from "../../components/common/ThemeToggleButton";
 
 export default function LoginScreen() {
-  const { isDark } = useTheme();
+  const { isDark, colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const { signInUser, loading: authLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -98,40 +100,12 @@ export default function LoginScreen() {
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <LinearGradient
-        colors={isDark ? ["#0B1220", "#0B1220"] : ["#F8F5EE", "#F8F5EE"]}
-        style={{ flex: 1 }}
-      >
-        {/* Soft Golden Glow at the top */}
-        <View pointerEvents="none" style={styles.glowWrap}>
-          <LinearGradient
-            colors={
-              isDark
-                ? [
-                    "rgba(201, 162, 39, 0.35)",
-                    "rgba(201, 162, 39, 0.15)",
-                    "rgba(201, 162, 39, 0)",
-                  ]
-                : [
-                    "rgba(201, 162, 39, 0.25)",
-                    "rgba(201, 162, 39, 0.1)",
-                    "rgba(201, 162, 39, 0)",
-                  ]
-            }
-            start={{ x: 0.5, y: 0 }}
-            end={{ x: 0.5, y: 1 }}
-            style={styles.glowGradient}
-          />
-          {Platform.OS !== "web" && (
-            <BlurView
-              intensity={40}
-              tint={isDark ? "dark" : "light"}
-              style={StyleSheet.absoluteFill}
-            />
-          )}
-        </View>
-
+      <AppBackground>
         <SafeAreaView style={styles.safeArea} edges={["top"]}>
+          <ThemeToggleButton
+            accessibilityLabel="Toggle app theme on login screen"
+            style={[styles.themeToggle, { top: insets.top + 12 }]}
+          />
           <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
             style={styles.keyboardView}
@@ -160,7 +134,7 @@ export default function LoginScreen() {
                   <Text
                     style={[
                       styles.welcomeText,
-                      { color: isDark ? "#FFFFFF" : "#1F3A32" }
+                      { color: colors.textStrong },
                     ]}
                   >
                     Welcome back
@@ -168,7 +142,7 @@ export default function LoginScreen() {
                   <Text
                     style={[
                       styles.noorText,
-                      { color: isDark ? "#FFFFFF" : "#1F3A32" }
+                      { color: colors.textStrong },
                     ]}
                   >
                     to your{" "}
@@ -177,7 +151,7 @@ export default function LoginScreen() {
                   <Text
                     style={[
                       styles.descriptionText,
-                      { color: isDark ? "#94A3B8" : "#6B7280" }
+                      { color: colors.textMuted },
                     ]}
                   >
                     Sign in to continue your child's journey of learning and faith.
@@ -194,8 +168,8 @@ export default function LoginScreen() {
                         {
                           backgroundColor: isDark
                             ? "rgba(148, 163, 184, 0.1)"
-                            : "rgba(201, 162, 39, 0.1)",
-                        }
+                            : colors.goldSoft,
+                        },
                       ]}
                     >
                       <Ionicons name="mail-outline" size={18} color="#C9A227" />
@@ -204,13 +178,13 @@ export default function LoginScreen() {
                       style={[
                         styles.input,
                         {
-                          backgroundColor: isDark ? "#16243E" : "#FFFFFF",
-                          color: isDark ? "#F1F5F9" : "#1F3A32",
-                          borderColor: isDark ? "rgba(148,163,184,0.15)" : "#E5E7EB",
-                        }
+                          backgroundColor: colors.surface,
+                          color: colors.text,
+                          borderColor: colors.border,
+                        },
                       ]}
                       placeholder="parent@alyaqeen.co.uk"
-                      placeholderTextColor={isDark ? "#64748B" : "#9CA3AF"}
+                      placeholderTextColor={colors.textSubtle}
                       value={email}
                       onChangeText={setEmail}
                       keyboardType="email-address"
@@ -227,8 +201,8 @@ export default function LoginScreen() {
                         {
                           backgroundColor: isDark
                             ? "rgba(148, 163, 184, 0.1)"
-                            : "rgba(201, 162, 39, 0.1)",
-                        }
+                            : colors.goldSoft,
+                        },
                       ]}
                     >
                       <Ionicons name="lock-closed-outline" size={18} color="#C9A227" />
@@ -238,13 +212,13 @@ export default function LoginScreen() {
                         styles.input,
                         styles.passwordInput,
                         {
-                          backgroundColor: isDark ? "#16243E" : "#FFFFFF",
-                          color: isDark ? "#F1F5F9" : "#1F3A32",
-                          borderColor: isDark ? "rgba(148,163,184,0.15)" : "#E5E7EB",
-                        }
+                          backgroundColor: colors.surface,
+                          color: colors.text,
+                          borderColor: colors.border,
+                        },
                       ]}
                       placeholder="••••••••••"
-                      placeholderTextColor={isDark ? "#64748B" : "#9CA3AF"}
+                      placeholderTextColor={colors.textSubtle}
                       value={password}
                       onChangeText={setPassword}
                       secureTextEntry={!showPassword}
@@ -274,8 +248,8 @@ export default function LoginScreen() {
                           {
                             backgroundColor: rememberMe ? "#C9A227" : "transparent",
                             borderWidth: rememberMe ? 0 : 1,
-                            borderColor: isDark ? "#475569" : "#D1D5DB",
-                          }
+                            borderColor: colors.border,
+                          },
                         ]}
                       >
                         {rememberMe && <Ionicons name="checkmark" size={13} color="#FFFFFF" />}
@@ -283,7 +257,7 @@ export default function LoginScreen() {
                       <Text
                         style={[
                           styles.rememberText,
-                          { color: isDark ? "#94A3B8" : "#6B7280" }
+                          { color: colors.textMuted },
                         ]}
                       >
                         Remember me
@@ -327,7 +301,7 @@ export default function LoginScreen() {
                     <Text
                       style={[
                         styles.signupText,
-                        { color: isDark ? "#94A3B8" : "#6B7280" }
+                        { color: colors.textMuted },
                       ]}
                     >
                       New family?{" "}
@@ -349,7 +323,7 @@ export default function LoginScreen() {
             </ScrollView>
           </KeyboardAvoidingView>
         </SafeAreaView>
-      </LinearGradient>
+      </AppBackground>
     </TouchableWithoutFeedback>
   );
 }
@@ -366,24 +340,17 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
   },
+  themeToggle: {
+    position: "absolute",
+    top: 12,
+    right: 24,
+    zIndex: 20,
+  },
   content: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingTop: Platform.OS === "ios" ? 20 : 40,
+    paddingTop: Platform.OS === "ios" ? 24 : 40,
     paddingBottom: 40,
-  },
-  glowWrap: {
-    position: "absolute",
-    top: -120,
-    left: -80,
-    right: -80,
-    height: 500,
-    borderRadius: 300,
-    overflow: "hidden",
-    zIndex: 0,
-  },
-  glowGradient: {
-    flex: 1,
   },
   logoContainer: {
     alignItems: "flex-start",
