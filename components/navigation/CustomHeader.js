@@ -1,5 +1,5 @@
 import React from "react";
-import { View, TouchableOpacity, Image, StyleSheet } from "react-native";
+import { View, TouchableOpacity, Image, StyleSheet, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../contexts";
@@ -9,7 +9,7 @@ import { router } from "expo-router";
 import ThemeToggleButton from "../common/ThemeToggleButton";
 
 export default function CustomHeader({ navigation }) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const { user, signOutUser } = useAuth();
 
@@ -36,8 +36,8 @@ export default function CustomHeader({ navigation }) {
       style={[
         styles.header,
         {
-          backgroundColor: "transparent",
           paddingTop: insets.top + 8,
+          // Make sure no background is applied
         },
       ]}
     >
@@ -45,16 +45,14 @@ export default function CustomHeader({ navigation }) {
         <TouchableOpacity
           accessibilityRole="button"
           accessibilityLabel="Open navigation menu"
-          style={[
-            styles.iconButton,
-            {
-              backgroundColor: colors.surfaceSoft,
-              borderColor: colors.border,
-            },
-          ]}
+          style={styles.iconButton}
           onPress={() => navigation?.toggleDrawer?.()}
         >
-          <Ionicons color={colors.gold} name="menu" size={24} />
+          <Ionicons 
+            color={colors.text} 
+            name="menu" 
+            size={24} 
+          />
         </TouchableOpacity>
         <Image
           source={require("../../assets/logo.png")}
@@ -68,16 +66,14 @@ export default function CustomHeader({ navigation }) {
           <TouchableOpacity
             accessibilityRole="button"
             accessibilityLabel="Log out"
-            style={[
-              styles.iconButton,
-              {
-                backgroundColor: colors.surfaceSoft,
-                borderColor: colors.border,
-              },
-            ]}
+            style={styles.iconButton}
             onPress={handleLogout}
           >
-            <Ionicons color={colors.gold} name="log-out-outline" size={22} />
+            <Ionicons 
+              color={colors.text} 
+              name="log-out-outline" 
+              size={22} 
+            />
           </TouchableOpacity>
         )}
       </View>
@@ -92,6 +88,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
     paddingBottom: 10,
+    // No backgroundColor, no border, no shadow
   },
   leftSection: {
     flexDirection: "row",
@@ -111,9 +108,9 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
+    // Completely transparent - no background, no border
   },
   themeButton: {
     width: 44,

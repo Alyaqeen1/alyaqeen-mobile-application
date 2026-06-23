@@ -18,12 +18,12 @@ export const lightTheme = {
   drawerBackground: "#F8F5EE",
   tabBackground: "rgba(255, 255, 255, 0.92)",
   toggleBackground: "rgba(255, 255, 255, 0.82)",
-  gradient: ["#F8F5EE", "#F8F5EE", "#F8F5EE"],
-  gradientLocations: [0, 0.55, 1],
+  gradient: ["#F8F5EE", "#FEFCF8", "#FFFFFF"],
+  gradientLocations: [0, 0.5, 1],
   glow: [
-    "rgba(201, 162, 39, 0.18)",
-    "rgba(201, 162, 39, 0.06)",
-    "rgba(201, 162, 39, 0)",
+    "rgba(201, 162, 39, 0.35)",  // Increased from 0.18
+    "rgba(201, 162, 39, 0.15)",  // Increased from 0.06
+    "rgba(201, 162, 39, 0)",     // Same
   ],
   blurTint: "light",
   blurIntensity: 24,
@@ -44,7 +44,7 @@ export const darkTheme = {
   surfaceSoft: "rgba(22, 36, 62, 0.72)",
   border: "rgba(148, 163, 184, 0.18)",
   divider: "rgba(148, 163, 184, 0.18)",
-  text: "#F1F5F9",
+  text: "#FFFFFF",
   textStrong: "#FFFFFF",
   textMuted: "#94A3B8",
   textSubtle: "#64748B",
@@ -56,11 +56,11 @@ export const darkTheme = {
   drawerBackground: "#0F172A",
   tabBackground: "rgba(15, 23, 42, 0.9)",
   toggleBackground: "rgba(15, 23, 42, 0.84)",
-  gradient: ["#2E363A", "#17344D", "#032847", "#001B35"],
-  gradientLocations: [0, 0.26, 0.7, 1],
+  gradient: ["#0B1220", "#0B1220", "#0B1220"],
+  gradientLocations: [0, 0.55, 1],
   glow: [
-    "rgba(201, 162, 39, 0.16)",
-    "rgba(201, 162, 39, 0.07)",
+    "rgba(201, 162, 39, 0.35)",
+    "rgba(201, 162, 39, 0.15)",
     "rgba(201, 162, 39, 0)",
   ],
   blurTint: "dark",

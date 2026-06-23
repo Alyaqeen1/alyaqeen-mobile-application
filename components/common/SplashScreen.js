@@ -26,7 +26,7 @@ const TRACK_PADDING = 6;
 
 export default function SplashScreen({ onFinish }) {
   const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
+  const insets = useSafeAreaInsets(); // Add this
 
   // Reanimated shared values
   const translateX = useSharedValue(0);
@@ -181,7 +181,10 @@ export default function SplashScreen({ onFinish }) {
         <SafeAreaView style={styles.safeArea}>
           <ThemeToggleButton
             accessibilityLabel="Toggle app theme on splash screen"
-            style={[styles.themeToggle, { top: insets.top + 12 }]}
+            style={[
+              styles.themeToggle,
+              { top: insets.top + 12 } // Add dynamic top positioning
+            ]}
           />
           <Animated.View style={[styles.content, containerStyle]}>
             <Image
@@ -213,21 +216,35 @@ export default function SplashScreen({ onFinish }) {
                   SWIPE TO START
                 </Text>
                 <Animated.View style={chevron1Style}>
-                  <Ionicons name="chevron-forward" size={18} color="#FFFFFF" />
+                  <Ionicons 
+                    name="chevron-forward" 
+                    size={18} 
+                    color={colors.text} // Use theme color instead of hardcoded white
+                  />
                 </Animated.View>
                 <Animated.View style={[chevron2Style, { marginLeft: -10 }]}>
                   <Ionicons
                     name="chevron-forward"
                     size={18}
-                    color="rgba(255,255,255,0.5)"
+                    color={colors.textSubtle} // Use theme color
                   />
                 </Animated.View>
               </Animated.View>
 
               {/* Sliding circular knob */}
               <GestureDetector gesture={combinedGesture}>
-                <Animated.View style={[styles.swipeKnob, knobStyle]}>
-                  <Ionicons name="walk" size={26} color={colors.background} />
+                <Animated.View 
+                  style={[
+                    styles.swipeKnob, 
+                    knobStyle,
+                    { backgroundColor: colors.gold } // Use theme gold
+                  ]}
+                >
+                  <Ionicons 
+                    name="walk" 
+                    size={26} 
+                    color={colors.background} 
+                  />
                 </Animated.View>
               </GestureDetector>
             </View>
@@ -247,7 +264,6 @@ const styles = StyleSheet.create({
   },
   themeToggle: {
     position: "absolute",
-    top: 12,
     right: 20,
     zIndex: 20,
   },
@@ -265,14 +281,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: "bold",
-    color: "#1F3A32",
     marginBottom: 16,
     textAlign: "center",
     letterSpacing: 0.5,
   },
   subtitle: {
     fontSize: 16,
-    color: "#6B7280",
     marginBottom: 60,
     textAlign: "center",
     lineHeight: 24,
@@ -306,7 +320,6 @@ const styles = StyleSheet.create({
     width: KNOB_SIZE,
     height: KNOB_SIZE,
     borderRadius: KNOB_SIZE / 2,
-    backgroundColor: "#C9A227",
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#000",
