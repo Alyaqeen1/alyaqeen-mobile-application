@@ -48,7 +48,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="announcements"
         options={{
-          title: "Announcements",
+          title: "Announcement",
           tabBarIcon: ({ color, size, focused }) => (
             <Text style={{ fontSize: size, color }}>
               {focused ? "📢" : "📢"}

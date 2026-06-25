@@ -4,12 +4,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../contexts";
 
 export default function FloatingTabBar({ state, descriptors, navigation }) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
 
-  const activeTabBackgroundColor = colors.surfaceSoft;
+  const activeTabBackgroundColor = colors.goldSoft;
   const inactiveTabBackgroundColor = "transparent";
-  const activeTextColor = "#C9A227";
+  const activeTextColor = colors.gold;
   const inactiveTextColor = colors.textMuted;
 
   return (
@@ -17,8 +17,9 @@ export default function FloatingTabBar({ state, descriptors, navigation }) {
       style={[
         styles.container,
         {
-          backgroundColor: "transparent",
-          bottom: insets.bottom + 8,
+          backgroundColor: isDark ? "#0B1220" : "#F8F5EE", // Solid colors
+          borderTopColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
+          paddingBottom: Math.max(insets.bottom, 8),
         },
       ]}
     >
@@ -64,7 +65,6 @@ export default function FloatingTabBar({ state, descriptors, navigation }) {
             onLongPress={onLongPress}
             style={[
               styles.tabItem,
-              isFocused && styles.activeTabItem,
               {
                 backgroundColor: isFocused ? activeTabBackgroundColor : inactiveTabBackgroundColor,
               },
@@ -96,30 +96,28 @@ export default function FloatingTabBar({ state, descriptors, navigation }) {
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
-    bottom: 20,
-    left: 20,
-    right: 20,
+    bottom: 0,
+    left: 0,
+    right: 0,
     flexDirection: "row",
     justifyContent: "space-around",
-    alignItems: "center",
-    paddingVertical: 6,
-    paddingHorizontal: 0,
+    alignItems: "flex-end",
+    paddingTop: 6,
+    paddingHorizontal: 8,
+    borderTopWidth: 1,
   },
   tabItem: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 8,
+    paddingVertical: 6,
     paddingHorizontal: 4,
-    borderRadius: 18,
-  },
-  activeTabItem: {
-    backgroundColor: "transparent",
+    borderRadius: 12,
   },
   tabLabel: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "500",
-    marginTop: 4,
+    marginTop: 2,
     textAlign: "center",
   },
 });
