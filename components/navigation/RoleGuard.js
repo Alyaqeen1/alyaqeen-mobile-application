@@ -1,5 +1,5 @@
-﻿import { View, Text } from "react-native";
+import ProtectedRoute from "./ProtectedRoute";
 
-export default function RoleGuard() {
-  return <View><Text>Placeholder Component</Text></View>;
+export default function RoleGuard({ children, roles = [] }) {
+  return <ProtectedRoute allowedRoles={roles}>{children}</ProtectedRoute>;
 }

@@ -5,11 +5,11 @@ import {
   signOut,
 } from "firebase/auth";
 import { auth } from "../firebase/firebase.config";
+import { useGetRoleQuery } from "../redux/features/role/roleApi";
 
 export const AuthContext = createContext();
 
-// Helper to map emails to roles (replace with Firestore later)
-const getUserRole = (email) => {
+const getFallbackRole = (email) => {
   if (!email) return null;
   if (email.includes("admin")) return "admin";
   if (email.includes("teacher")) return "teacher";
@@ -19,29 +19,45 @@ const getUserRole = (email) => {
 
 export default function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [userRole, setUserRole] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(true);
+  const {
+    data: roleData,
+    isLoading: roleLoading,
+    isFetching: roleFetching,
+    isUninitialized: roleUninitialized,
+  } = useGetRoleQuery(user?.email, {
+    skip: !user?.email,
+  });
+
+  const result = useGetRoleQuery(user?.email, {
+  skip: !user?.email,
+});
+
+
+
+  const resolvedRole =
+    roleData?.role || roleData?.data?.role || getFallbackRole(user?.email);
+  const loading =
+    authLoading ||
+    (!!user?.email && (roleLoading || roleFetching || roleUninitialized));
 
   const signInUser = async (email, password) => {
-    setLoading(true);
+    setAuthLoading(true);
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const role = getUserRole(userCredential.user.email);
-      setUserRole(role);
       return userCredential;
     } catch (error) {
-      setLoading(false);
+      setAuthLoading(false);
       throw error;
     }
   };
 
   const signOutUser = async () => {
-    setLoading(true);
+    setAuthLoading(true);
     try {
       await signOut(auth);
-      setUserRole(null);
     } catch (error) {
-      setLoading(false);
+      setAuthLoading(false);
       throw error;
     }
   };
@@ -50,14 +66,7 @@ export default function AuthProvider({ children }) {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       console.log("Auth state changed, user:", currentUser);
       setUser(currentUser);
-      if (currentUser) {
-        const role = getUserRole(currentUser.email);
-        console.log("Setting user role:", role);
-        setUserRole(role);
-      } else {
-        setUserRole(null);
-      }
-      setLoading(false);
+      setAuthLoading(false);
     });
 
     return () => unsubscribe();
@@ -65,7 +74,7 @@ export default function AuthProvider({ children }) {
 
   const authInfo = {
     user,
-    userRole,
+    userRole: user ? resolvedRole : null,
     loading,
     signInUser,
     signOutUser,

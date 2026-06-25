@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import useAuth from "../../hooks/useAuth";
 import { useTheme } from "../../contexts";
 import AppBackground from "../common/AppBackground";
+import { getDashboardRouteForRole } from "../../utils";
 
 export default function ProtectedRoute({ children, allowedRoles }) {
   const { user, userRole, loading } = useAuth();
@@ -12,11 +13,9 @@ export default function ProtectedRoute({ children, allowedRoles }) {
   useEffect(() => {
     if (!loading) {
       if (!user) {
-        // Not logged in, redirect to login
         router.replace("/(auth)/login");
       } else if (allowedRoles && !allowedRoles.includes(userRole)) {
-        // Logged in but not authorized, redirect to public home
-        router.replace("/(public)/(tabs)");
+        router.replace(getDashboardRouteForRole(userRole));
       }
     }
   }, [user, userRole, loading]);

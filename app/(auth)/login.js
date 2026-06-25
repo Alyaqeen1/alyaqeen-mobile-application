@@ -22,11 +22,12 @@ import Toast from "react-native-toast-message";
 import { Ionicons } from "@expo/vector-icons";
 import AppBackground from "../../components/common/AppBackground";
 import ThemeToggleButton from "../../components/common/ThemeToggleButton";
+import { getDashboardRouteForRole } from "../../utils";
 
 export default function LoginScreen() {
   const { isDark, colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { signInUser, loading: authLoading } = useAuth();
+  const { user, userRole, signInUser, loading: authLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -52,13 +53,11 @@ export default function LoginScreen() {
     }
   };
 
-  const getRoleFromEmail = (email) => {
-    if (!email) return "public";
-    if (email.includes("admin")) return "admin";
-    if (email.includes("teacher")) return "teacher";
-    if (email.includes("parent")) return "parent";
-    return "public";
-  };
+  React.useEffect(() => {
+    if (!authLoading && user) {
+      router.replace(getDashboardRouteForRole(userRole));
+    }
+  }, [user, userRole, authLoading]);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -77,18 +76,6 @@ export default function LoginScreen() {
         text1: "Success!",
         text2: "Logged in successfully!",
       });
-
-      const role = getRoleFromEmail(email);
-      console.log("Login role detected:", role, "Email:", email);
-      if (role === "admin") {
-        router.replace("/(admin)/(tabs)");
-      } else if (role === "teacher") {
-        router.replace("/(teacher)/(tabs)");
-      } else if (role === "parent") {
-        router.replace("/(parent)/(tabs)");
-      } else {
-        router.replace("/(public)/(tabs)");
-      }
     } catch (error) {
       Toast.show({
         type: "error",

@@ -1,11 +1,26 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
-// Dummy API slice - no endpoints implemented yet
 export const apiSlice = createApi({
   reducerPath: "api",
-  baseQuery: fetchBaseQuery({ baseUrl: "/" }), // Placeholder base URL
-  tagTypes: [],
-  endpoints: () => ({}),
+ baseQuery: fetchBaseQuery({
+  baseUrl: process.env.EXPO_PUBLIC_URL,
+  credentials: "include",
+}),
+  // tagTypes: ["Reviews"],
+  tagTypes: [
+    "Student",
+    "Family",
+    "Fee",
+    "Teacher",
+    "Department",
+    "Class",
+    "Subject",
+    "PrayerTime",
+    "Merit",
+    "WebsiteSettings",
+    "Blog",
+    "Complaint",
+    "Search",
+  ], // Add both Student & Family tags here
+  endpoints: (builder) => ({}),
 });
-
-export const {} = apiSlice;
