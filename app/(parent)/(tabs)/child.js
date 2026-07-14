@@ -1,13 +1,8 @@
-import React, { useEffect, useMemo, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-} from "react-native";
+import React from "react";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import { useTheme } from "../../../contexts";
 import useAuth from "../../../hooks/useAuth";
 import LoadingSpinner from "../../../components/common/LoadingSpinner";
@@ -17,20 +12,8 @@ import {
   useGetEnrolledFullFamilyQuery,
   useGetFullFamilyQuery,
 } from "../../../redux/features/families/familiesApi";
-import {
-  useGetAttendanceByStudentSummaryQuery,
-} from "../../../redux/features/attendances/attendancesApi";
-import { useGetMeritsOfStudentQuery } from "../../../redux/features/merits/meritsApi";
 import { useGetDepartmentsQuery } from "../../../redux/features/departments/departmentsApi";
 import { useGetClassesQuery } from "../../../redux/features/classes/classesApi";
-
-function getMonthYear() {
-  const date = new Date();
-  return {
-    month: String(date.getMonth() + 1).padStart(2, "0"),
-    year: String(date.getFullYear()),
-  };
-}
 
 const SESSION_LABELS = {
   fajr: "Fajr",
@@ -112,14 +95,12 @@ function getAcademicDisplay(academic, departments, classes) {
 }
 
 function formatCurrency(amount) {
-  return `GBP ${Number(amount || 0).toFixed(2)}`;
+  return `£${Number(amount || 0).toFixed(2)}`;
 }
 
 export default function ParentChildScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
-  const { month, year } = useMemo(getMonthYear, []);
-
   const {
     data: family,
     isLoading: familyLoading,
@@ -128,7 +109,6 @@ export default function ParentChildScreen() {
   } = useGetFullFamilyQuery(undefined, {
     skip: !user?.email,
   });
-
   const { data: enrolledFamily } = useGetEnrolledFullFamilyQuery(user?.email, {
     skip: !user?.email,
   });
@@ -136,43 +116,11 @@ export default function ParentChildScreen() {
   const { data: classes } = useGetClassesQuery();
 
   const childList = family?.childrenDocs || enrolledFamily?.childrenDocs || [];
-  const [activeChildId, setActiveChildId] = useState(null);
-
-  useEffect(() => {
-    if (!activeChildId && childList.length > 0) {
-      setActiveChildId(childList[0]._id);
-    }
-  }, [activeChildId, childList]);
-
-  const selectedChild =
-    childList.find((child) => child._id === activeChildId) || childList[0] || null;
-
-  const {
-    data: attendanceSummary,
-    isLoading: attendanceLoading,
-    isError: attendanceError,
-    refetch: refetchAttendance,
-  } = useGetAttendanceByStudentSummaryQuery(
-    selectedChild?._id ? { studentId: selectedChild._id, month, year } : undefined,
-    { skip: !selectedChild?._id }
-  );
-
-  const {
-    data: merits,
-    isLoading: meritsLoading,
-    isError: meritsError,
-    refetch: refetchMerits,
-  } = useGetMeritsOfStudentQuery(
-    selectedChild?._id ? { studentId: selectedChild._id, month, year } : undefined,
-    { skip: !selectedChild?._id }
-  );
-
-  const isLoading = familyLoading || attendanceLoading || meritsLoading;
 
   return (
     <SafeAreaView edges={["left", "right"]} style={styles.container}>
-      {isLoading ? (
-        <LoadingSpinner label="Loading child details..." />
+      {familyLoading ? (
+        <LoadingSpinner label="Loading your children..." />
       ) : familyError ? (
         <View style={styles.stateWrapper}>
           <ErrorState
@@ -184,8 +132,9 @@ export default function ParentChildScreen() {
       ) : (
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
           <View style={styles.section}>
-            <Text style={[styles.title, { color: colors.textStrong }]}>
-              Your children
+            <Text style={[styles.title, { color: colors.textStrong }]}>Your children</Text>
+            <Text style={[styles.subtitle, { color: colors.textMuted }]}>
+              Tap a child to open their details in a separate screen.
             </Text>
 
             {childList.length === 0 ? (
@@ -197,7 +146,6 @@ export default function ParentChildScreen() {
             ) : (
               <View style={styles.childrenList}>
                 {childList.map((child) => {
-                  const isActive = child._id === selectedChild?._id;
                   const academicDisplay = getAcademicDisplay(
                     child.academic,
                     departments,
@@ -205,39 +153,41 @@ export default function ParentChildScreen() {
                   );
 
                   return (
-                    <View
+                    <TouchableOpacity
                       key={child._id}
+                      activeOpacity={0.9}
+                      onPress={() =>
+                        router.push({
+                          pathname: "/(parent)/child/[childId]",
+                          params: { childId: child._id },
+                        })
+                      }
                       style={[
-                        styles.childPickerCard,
+                        styles.childCard,
                         {
-                          backgroundColor: isActive ? colors.goldSoft : colors.surface,
-                          borderColor: isActive ? colors.gold : colors.border,
+                          backgroundColor: colors.surface,
+                          borderColor: colors.border,
                           shadowColor: colors.shadowColor,
                         },
                       ]}
                     >
-                      <TouchableOpacity
-                        activeOpacity={0.85}
-                        onPress={() => setActiveChildId(child._id)}
-                      >
-                        <View style={styles.childHeader}>
-                          <View style={styles.avatar}>
-                            <Text style={styles.avatarText}>
-                              {(child.name || "?").charAt(0).toUpperCase()}
-                            </Text>
-                          </View>
-                          <View style={styles.childInfo}>
-                            <Text
-                              style={[styles.childName, { color: colors.textStrong }]}
-                            >
-                              {child.name}
-                            </Text>
-                            <Text
-                              style={[styles.childMeta, { color: colors.textMuted }]}
-                            >
-                              Roll number: {child.rollNumber || "Not assigned"}
-                            </Text>
-                          </View>
+                      <View style={styles.cardTopRow}>
+                        <View style={styles.avatar}>
+                          <Text style={styles.avatarText}>
+                            {(child.name || "?").charAt(0).toUpperCase()}
+                          </Text>
+                        </View>
+
+                        <View style={styles.childInfo}>
+                          <Text style={[styles.childName, { color: colors.textStrong }]}>
+                            {child.name}
+                          </Text>
+                          <Text style={[styles.childMeta, { color: colors.textMuted }]}>
+                            Roll number: {child.rollNumber || "Not assigned"}
+                          </Text>
+                        </View>
+
+                        <View style={styles.rightColumn}>
                           <View
                             style={[
                               styles.statusBadge,
@@ -247,184 +197,61 @@ export default function ParentChildScreen() {
                               },
                             ]}
                           >
-                            <Text
-                              style={[styles.statusText, { color: colors.textStrong }]}
-                            >
+                            <Text style={[styles.statusText, { color: colors.textStrong }]}>
                               {child.status}
                             </Text>
                           </View>
+                          <Ionicons
+                            color={colors.gold}
+                            name="chevron-forward"
+                            size={20}
+                          />
+                        </View>
+                      </View>
+
+                      <View style={styles.detailGrid}>
+                        <View style={styles.detailItem}>
+                          <Text style={[styles.detailLabel, { color: colors.textMuted }]}>
+                            Department
+                          </Text>
+                          <Text style={[styles.detailValue, { color: colors.textStrong }]}>
+                            {academicDisplay.departments.join(", ")}
+                          </Text>
                         </View>
 
-                        <View style={styles.detailGrid}>
-                          <View style={styles.detailItem}>
-                            <Text
-                              style={[styles.detailLabel, { color: colors.textMuted }]}
-                            >
-                              Department
-                            </Text>
-                            <Text
-                              style={[styles.detailValue, { color: colors.textStrong }]}
-                            >
-                              {academicDisplay.departments.join(", ")}
-                            </Text>
-                          </View>
-                          <View style={styles.detailItem}>
-                            <Text
-                              style={[styles.detailLabel, { color: colors.textMuted }]}
-                            >
-                              Class
-                            </Text>
-                            <Text
-                              style={[styles.detailValue, { color: colors.textStrong }]}
-                            >
-                              {academicDisplay.classes.join(", ")}
-                            </Text>
-                          </View>
-                          <View style={styles.detailItem}>
-                            <Text
-                              style={[styles.detailLabel, { color: colors.textMuted }]}
-                            >
-                              Session
-                            </Text>
-                            <Text
-                              style={[styles.detailValue, { color: colors.textStrong }]}
-                            >
-                              {academicDisplay.sessions.join(", ")}
-                            </Text>
-                          </View>
-                          <View style={styles.detailItem}>
-                            <Text
-                              style={[styles.detailLabel, { color: colors.textMuted }]}
-                            >
-                              Monthly fee
-                            </Text>
-                            <Text
-                              style={[styles.detailValue, { color: colors.textStrong }]}
-                            >
-                              {formatCurrency(child.monthly_fee)}
-                            </Text>
-                          </View>
+                        <View style={styles.detailItem}>
+                          <Text style={[styles.detailLabel, { color: colors.textMuted }]}>
+                            Class
+                          </Text>
+                          <Text style={[styles.detailValue, { color: colors.textStrong }]}>
+                            {academicDisplay.classes.join(", ")}
+                          </Text>
                         </View>
-                      </TouchableOpacity>
-                    </View>
+
+                        <View style={styles.detailItem}>
+                          <Text style={[styles.detailLabel, { color: colors.textMuted }]}>
+                            Session
+                          </Text>
+                          <Text style={[styles.detailValue, { color: colors.textStrong }]}>
+                            {academicDisplay.sessions.join(", ")}
+                          </Text>
+                        </View>
+
+                        <View style={styles.detailItem}>
+                          <Text style={[styles.detailLabel, { color: colors.textMuted }]}>
+                            Monthly fee
+                          </Text>
+                          <Text style={[styles.detailValue, { color: colors.textStrong }]}>
+                            {formatCurrency(child.monthly_fee)}
+                          </Text>
+                        </View>
+                      </View>
+                    </TouchableOpacity>
                   );
                 })}
               </View>
             )}
           </View>
-
-          {selectedChild ? (
-            <>
-              <View
-                style={[
-                  styles.sectionCard,
-                  {
-                    backgroundColor: colors.surface,
-                    borderColor: colors.border,
-                    shadowColor: colors.shadowColor,
-                  },
-                ]}
-              >
-                <View style={styles.sectionHeaderRow}>
-                  <Text style={[styles.sectionTitle, { color: colors.textStrong }]}>
-                    Attendance summary
-                  </Text>
-                  <Ionicons color={colors.gold} name="calendar-outline" size={18} />
-                </View>
-
-                {attendanceError ? (
-                  <ErrorState
-                    title="Couldn't load attendance"
-                    message="Try again to see attendance details."
-                    onRetry={refetchAttendance}
-                  />
-                ) : (
-                  <View style={styles.kvList}>
-                    <View style={styles.kvRow}>
-                      <Text style={[styles.kvLabel, { color: colors.textMuted }]}>
-                        Month
-                      </Text>
-                      <Text style={[styles.kvValue, { color: colors.textStrong }]}>
-                        {month}/{year}
-                      </Text>
-                    </View>
-                    <View style={styles.kvRow}>
-                      <Text style={[styles.kvLabel, { color: colors.textMuted }]}>
-                        Records
-                      </Text>
-                      <Text style={[styles.kvValue, { color: colors.textStrong }]}>
-                        {Array.isArray(attendanceSummary)
-                          ? attendanceSummary.length
-                          : attendanceSummary?.count ?? "—"}
-                      </Text>
-                    </View>
-                    <View style={styles.kvRow}>
-                      <Text style={[styles.kvLabel, { color: colors.textMuted }]}>
-                        Present
-                      </Text>
-                      <Text style={[styles.kvValue, { color: colors.textStrong }]}>
-                        {attendanceSummary?.present ?? attendanceSummary?.presentCount ?? "—"}
-                      </Text>
-                    </View>
-                    <View style={styles.kvRow}>
-                      <Text style={[styles.kvLabel, { color: colors.textMuted }]}>
-                        Absent
-                      </Text>
-                      <Text style={[styles.kvValue, { color: colors.textStrong }]}>
-                        {attendanceSummary?.absent ?? attendanceSummary?.absentCount ?? "—"}
-                      </Text>
-                    </View>
-                  </View>
-                )}
-              </View>
-
-              <View
-                style={[
-                  styles.sectionCard,
-                  {
-                    backgroundColor: colors.surface,
-                    borderColor: colors.border,
-                    shadowColor: colors.shadowColor,
-                  },
-                ]}
-              >
-                <View style={styles.sectionHeaderRow}>
-                  <Text style={[styles.sectionTitle, { color: colors.textStrong }]}>
-                    Achievements
-                  </Text>
-                  <Ionicons color={colors.gold} name="trophy-outline" size={18} />
-                </View>
-
-                {meritsError ? (
-                  <ErrorState
-                    title="Couldn't load achievements"
-                    message="Try again to see achievements details."
-                    onRetry={refetchMerits}
-                  />
-                ) : Array.isArray(merits) && merits.length > 0 ? (
-                  <View style={styles.kvList}>
-                    <View style={styles.kvRow}>
-                      <Text style={[styles.kvLabel, { color: colors.textMuted }]}>
-                        Items this month
-                      </Text>
-                      <Text style={[styles.kvValue, { color: colors.textStrong }]}>
-                        {merits.length}
-                      </Text>
-                    </View>
-                    <Text style={[styles.helperText, { color: colors.textMuted }]}>
-                      Latest: {merits[0]?.title || merits[0]?.reason || merits[0]?.type || "Achievement"}
-                    </Text>
-                  </View>
-                ) : (
-                  <EmptyState
-                    title="No achievements yet"
-                    message="Achievements will appear here when awarded."
-                    icon="sparkles-outline"
-                  />
-                )}
-              </View>
-            </>
-          ) : null}
         </ScrollView>
       )}
     </SafeAreaView>
@@ -451,67 +278,28 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: "bold",
+    fontWeight: "700",
+  },
+  subtitle: {
+    marginTop: 6,
     marginBottom: 16,
+    fontSize: 15,
+    lineHeight: 21,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 12,
+  childrenList: {
+    gap: 12,
   },
-  childPickerCard: {
+  childCard: {
     borderRadius: 24,
     borderWidth: 1,
     padding: 18,
     gap: 16,
-    marginBottom: 12,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.06,
     shadowRadius: 14,
     elevation: 2,
   },
-  childrenList: {
-    gap: 0,
-  },
-  sectionCard: {
-    marginHorizontal: 20,
-    marginBottom: 16,
-    borderRadius: 24,
-    borderWidth: 1,
-    padding: 18,
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.07,
-    shadowRadius: 16,
-    elevation: 3,
-    gap: 12,
-  },
-  sectionHeaderRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  kvList: {
-    gap: 10,
-  },
-  kvRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  kvLabel: {
-    fontSize: 14,
-  },
-  kvValue: {
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  helperText: {
-    marginTop: 6,
-    fontSize: 13,
-  },
-  childHeader: {
+  cardTopRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
@@ -539,6 +327,10 @@ const styles = StyleSheet.create({
   },
   childMeta: {
     fontSize: 13,
+  },
+  rightColumn: {
+    alignItems: "flex-end",
+    gap: 10,
   },
   statusBadge: {
     borderRadius: 999,

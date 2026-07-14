@@ -34,7 +34,8 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 16,
     padding: 16,
-    width: 280,
+    width: "100%",
+    alignSelf: "stretch",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -52,5 +53,6 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: 14,
+    lineHeight: 21,
   },
 });

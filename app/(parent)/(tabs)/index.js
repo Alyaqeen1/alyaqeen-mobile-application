@@ -106,7 +106,7 @@ function getAcademicDisplay(academic, departments, classes) {
 }
 
 function formatCurrency(amount) {
-  return `GBP ${Number(amount || 0).toFixed(2)}`;
+  return `£${Number(amount || 0).toFixed(2)}`;
 }
 
 export default function ParentDashboardScreen() {

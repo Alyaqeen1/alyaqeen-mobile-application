@@ -12,6 +12,13 @@ import {
   useGetPublicAnnouncementsQuery,
 } from "../../../redux/features/announcements/announcementsApi";
 
+function getAnnouncementTimestamp(item) {
+  const rawDate = item?.lastUpdated || item?.date || item?.createdAt || item?.updatedAt;
+  const timestamp = rawDate ? new Date(rawDate).getTime() : 0;
+
+  return Number.isNaN(timestamp) ? 0 : timestamp;
+}
+
 export default function ParentAcademyScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
@@ -36,14 +43,24 @@ export default function ParentAcademyScreen() {
 
   const parentNotices = useMemo(() => {
     if (!parentNoticesRaw) return [];
-    return Array.isArray(parentNoticesRaw) ? parentNoticesRaw : [parentNoticesRaw];
+    const notices = Array.isArray(parentNoticesRaw)
+      ? parentNoticesRaw
+      : [parentNoticesRaw];
+
+    return [...notices].sort(
+      (a, b) => getAnnouncementTimestamp(b) - getAnnouncementTimestamp(a)
+    );
   }, [parentNoticesRaw]);
 
   const publicAnnouncements = useMemo(() => {
     if (!publicAnnouncementsRaw) return [];
-    return Array.isArray(publicAnnouncementsRaw)
+    const announcements = Array.isArray(publicAnnouncementsRaw)
       ? publicAnnouncementsRaw
       : [publicAnnouncementsRaw];
+
+    return [...announcements].sort(
+      (a, b) => getAnnouncementTimestamp(b) - getAnnouncementTimestamp(a)
+    );
   }, [publicAnnouncementsRaw]);
 
   const isLoading = parentNoticesLoading || publicAnnouncementsLoading;
