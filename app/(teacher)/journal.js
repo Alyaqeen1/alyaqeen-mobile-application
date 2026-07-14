@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function TeacherJournalScreen() {
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView edges={["left", "right"]} style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.title}>Journal</Text>
         <Text style={styles.subtitle}>Class notes and observations</Text>

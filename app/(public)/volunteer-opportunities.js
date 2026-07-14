@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, FlatList } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import VolunteerCard from "../../components/cards/VolunteerCard.js";
 import { useTheme } from "../../contexts";
-import AppBackground from "../../components/common/AppBackground";
 
 export default function PublicVolunteerOpportunitiesScreen() {
   const { colors } = useTheme();
@@ -13,8 +12,7 @@ export default function PublicVolunteerOpportunitiesScreen() {
   ];
 
   return (
-    <AppBackground>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView edges={["left", "right"]} style={styles.container}>
         <View style={styles.header}>
           <Text style={[styles.title, { color: colors.textStrong }]}>
             Volunteer Opportunities
@@ -31,7 +29,6 @@ export default function PublicVolunteerOpportunitiesScreen() {
           contentContainerStyle={styles.listContent}
         />
       </SafeAreaView>
-    </AppBackground>
   );
 }
 

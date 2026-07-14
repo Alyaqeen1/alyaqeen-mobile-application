@@ -2,14 +2,12 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../../contexts";
-import AppBackground from "../../components/common/AppBackground";
 
 export default function PublicContactScreen() {
   const { colors } = useTheme();
 
   return (
-    <AppBackground>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView edges={["left", "right"]} style={styles.container}>
         <View style={styles.content}>
           <Text style={[styles.title, { color: colors.textStrong }]}>Contact Us</Text>
 
@@ -64,7 +62,6 @@ export default function PublicContactScreen() {
           </TouchableOpacity>
         </View>
       </SafeAreaView>
-    </AppBackground>
   );
 }
 

@@ -3,9 +3,13 @@ import { View, TouchableOpacity, Text, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../contexts";
 
+export const TAB_BAR_BASE_HEIGHT = 60;
+export const TAB_BAR_SCENE_PADDING = 112;
+
 export default function FloatingTabBar({ state, descriptors, navigation }) {
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
+  const bottomInset = Math.max(insets.bottom, 12);
 
   const activeTabBackgroundColor = colors.goldSoft;
   const inactiveTabBackgroundColor = "transparent";
@@ -19,7 +23,8 @@ export default function FloatingTabBar({ state, descriptors, navigation }) {
         {
           backgroundColor: isDark ? "#0B1220" : "#F8F5EE", // Solid colors
           borderTopColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
-          paddingBottom: Math.max(insets.bottom, 8),
+          paddingBottom: bottomInset,
+          minHeight: TAB_BAR_BASE_HEIGHT + bottomInset,
         },
       ]}
     >
@@ -102,7 +107,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-around",
     alignItems: "flex-end",
-    paddingTop: 6,
+    paddingTop: 4,
     paddingHorizontal: 8,
     borderTopWidth: 1,
   },
@@ -110,7 +115,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 6,
+    paddingVertical: 4,
     paddingHorizontal: 4,
     borderRadius: 12,
   },

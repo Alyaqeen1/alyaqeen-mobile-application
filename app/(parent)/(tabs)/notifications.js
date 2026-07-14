@@ -3,31 +3,34 @@ import { View, Text, StyleSheet, FlatList } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { dummyNotifications } from "../../../dummy-data/notifications.js";
 import NotificationCard from "../../../components/cards/NotificationCard.js";
+import { useTheme } from "../../../contexts";
 
 export default function ParentNotificationsScreen() {
+  const { colors } = useTheme();
+
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Notifications</Text>
-      </View>
-      <FlatList
-        data={dummyNotifications}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <View style={styles.cardWrapper}>
-            <NotificationCard notification={item} />
-          </View>
-        )}
-        contentContainerStyle={styles.listContent}
-      />
-    </SafeAreaView>
+      <SafeAreaView edges={["left", "right"]} style={styles.container}>
+        <View style={styles.header}>
+          <Text style={[styles.title, { color: colors.textStrong }]}>Notifications</Text>
+        </View>
+        <FlatList
+          data={dummyNotifications}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={({ item }) => (
+            <View style={styles.cardWrapper}>
+              <NotificationCard notification={item} />
+            </View>
+          )}
+          contentContainerStyle={styles.listContent}
+        />
+      </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F5EE",
+    backgroundColor: "transparent",
   },
   header: {
     paddingHorizontal: 20,
@@ -37,7 +40,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#1E3A5F",
   },
   listContent: {
     paddingHorizontal: 20,

@@ -2,15 +2,13 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Switch } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../../contexts";
-import AppBackground from "../../components/common/AppBackground";
 
 export default function PublicSettingsScreen() {
   const { colors } = useTheme();
   const [isNotificationsEnabled, setIsNotificationsEnabled] = React.useState(true);
 
   return (
-    <AppBackground>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView edges={["left", "right"]} style={styles.container}>
         <View style={styles.content}>
           <Text style={[styles.title, { color: colors.textStrong }]}>Settings</Text>
 
@@ -79,7 +77,6 @@ export default function PublicSettingsScreen() {
           </TouchableOpacity>
         </View>
       </SafeAreaView>
-    </AppBackground>
   );
 }
 

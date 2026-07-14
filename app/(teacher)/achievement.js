@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function TeacherAchievementScreen() {
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView edges={["left", "right"]} style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.title}>Achievements</Text>
         <Text style={styles.subtitle}>Manage student achievements</Text>

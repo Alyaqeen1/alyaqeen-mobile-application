@@ -1,22 +1,27 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useTheme } from "../../../contexts";
 
 export default function TeacherMessagesScreen() {
+  const { colors } = useTheme();
+
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Messages</Text>
-        <Text style={styles.subtitle}>Communicate with parents</Text>
-      </View>
-    </SafeAreaView>
+      <SafeAreaView edges={["left", "right"]} style={styles.container}>
+        <View style={styles.content}>
+          <Text style={[styles.title, { color: colors.textStrong }]}>Messages</Text>
+          <Text style={[styles.subtitle, { color: colors.textMuted }]}>
+            Communicate with parents
+          </Text>
+        </View>
+      </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F5EE",
+    backgroundColor: "transparent",
   },
   content: {
     padding: 20,
@@ -25,11 +30,9 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#1E3A5F",
   },
   subtitle: {
     fontSize: 16,
-    color: "#6B7280",
     marginTop: 4,
   },
 });

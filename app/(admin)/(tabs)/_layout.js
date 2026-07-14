@@ -1,14 +1,19 @@
 import React from "react";
 import { Tabs } from "expo-router";
 import { Text } from "react-native";
-import FloatingTabBar from "../../../components/navigation/FloatingTabBar";
+import FloatingTabBar, {
+  TAB_BAR_SCENE_PADDING,
+} from "../../../components/navigation/FloatingTabBar";
 
 export default function AdminTabsLayout() {
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        sceneStyle: { backgroundColor: "transparent" },
+        sceneStyle: {
+          backgroundColor: "transparent",
+          paddingBottom: TAB_BAR_SCENE_PADDING,
+        },
       }}
       tabBar={(props) => <FloatingTabBar {...props} />}
     >

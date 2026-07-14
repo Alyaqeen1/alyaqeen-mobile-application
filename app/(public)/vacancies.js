@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, FlatList } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import VacancyCard from "../../components/cards/VacancyCard.js";
 import { useTheme } from "../../contexts";
-import AppBackground from "../../components/common/AppBackground";
 
 export default function PublicVacanciesScreen() {
   const { colors } = useTheme();
@@ -13,8 +12,7 @@ export default function PublicVacanciesScreen() {
   ];
 
   return (
-    <AppBackground>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView edges={["left", "right"]} style={styles.container}>
         <View style={styles.header}>
           <Text style={[styles.title, { color: colors.textStrong }]}>Vacancies</Text>
         </View>
@@ -29,7 +27,6 @@ export default function PublicVacanciesScreen() {
           contentContainerStyle={styles.listContent}
         />
       </SafeAreaView>
-    </AppBackground>
   );
 }
 

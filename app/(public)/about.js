@@ -2,14 +2,12 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../../contexts";
-import AppBackground from "../../components/common/AppBackground";
 
 export default function PublicAboutScreen() {
   const { colors } = useTheme();
 
   return (
-    <AppBackground>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView edges={["left", "right"]} style={styles.container}>
         <View style={styles.content}>
           <Text style={[styles.title, { color: colors.textStrong }]}>
             About Alyaqeen Academy
@@ -28,7 +26,6 @@ export default function PublicAboutScreen() {
           </Text>
         </View>
       </SafeAreaView>
-    </AppBackground>
   );
 }
 

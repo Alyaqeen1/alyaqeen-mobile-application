@@ -29,12 +29,6 @@ export default function AuthProvider({ children }) {
     skip: !user?.email,
   });
 
-  const result = useGetRoleQuery(user?.email, {
-  skip: !user?.email,
-});
-
-
-
   const resolvedRole =
     roleData?.role || roleData?.data?.role || getFallbackRole(user?.email);
   const loading =

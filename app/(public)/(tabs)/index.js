@@ -7,14 +7,12 @@ import { dummyPrayerTimes } from "../../../dummy-data/prayerTimes.js";
 import AnnouncementCard from "../../../components/cards/AnnouncementCard.js";
 import EventCard from "../../../components/cards/EventCard.js";
 import { useTheme } from "../../../contexts";
-import AppBackground from "../../../components/common/AppBackground";
 
 export default function PublicHomeScreen() {
   const { colors } = useTheme();
   
   return (
-    <AppBackground>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView edges={["left", "right"]} style={styles.container}>
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.textStrong }]}>
@@ -60,7 +58,6 @@ export default function PublicHomeScreen() {
           </View>
         </ScrollView>
       </SafeAreaView>
-    </AppBackground>
   );
 }
 

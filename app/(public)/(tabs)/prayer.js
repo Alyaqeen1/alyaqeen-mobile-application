@@ -4,14 +4,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { dummyPrayerTimes } from "../../../dummy-data/prayerTimes.js";
 import PrayerCard from "../../../components/cards/PrayerCard.js";
 import { useTheme } from "../../../contexts";
-import AppBackground from "../../../components/common/AppBackground";
 
 export default function PublicPrayerScreen() {
   const { colors } = useTheme();
 
   return (
-    <AppBackground>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView edges={["left", "right"]} style={styles.container}>
         <View style={styles.header}>
           <Text style={[styles.title, { color: colors.textStrong }]}>
             Prayer Timetable
@@ -31,7 +29,6 @@ export default function PublicPrayerScreen() {
           contentContainerStyle={styles.listContent}
         />
       </SafeAreaView>
-    </AppBackground>
   );
 }
 

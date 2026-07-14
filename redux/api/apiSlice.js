@@ -3,7 +3,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 export const apiSlice = createApi({
   reducerPath: "api",
  baseQuery: fetchBaseQuery({
-  baseUrl: process.env.EXPO_PUBLIC_URL,
+  baseUrl: "https://alyaqeen-server-two.vercel.app",
   credentials: "include",
 }),
   // tagTypes: ["Reviews"],
@@ -11,6 +11,8 @@ export const apiSlice = createApi({
     "Student",
     "Family",
     "Fee",
+    "Announcements",
+    "Attendance",
     "Teacher",
     "Department",
     "Class",

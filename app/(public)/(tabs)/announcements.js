@@ -4,14 +4,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { dummyAnnouncements } from "../../../dummy-data/announcements.js";
 import AnnouncementCard from "../../../components/cards/AnnouncementCard.js";
 import { useTheme } from "../../../contexts";
-import AppBackground from "../../../components/common/AppBackground";
 
 export default function PublicAnnouncementsScreen() {
   const { colors } = useTheme();
 
   return (
-    <AppBackground>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView edges={["left", "right"]} style={styles.container}>
         <View style={styles.header}>
           <Text style={[styles.title, { color: colors.textStrong }]}>
             Announcements
@@ -31,7 +29,6 @@ export default function PublicAnnouncementsScreen() {
           contentContainerStyle={styles.listContent}
         />
       </SafeAreaView>
-    </AppBackground>
   );
 }
 

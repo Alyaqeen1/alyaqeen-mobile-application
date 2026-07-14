@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useTheme } from "../../contexts";
+import { htmlToPlainText } from "../../utils/html";
 
 export default function AnnouncementCard({ announcement }) {
   const { colors } = useTheme();
@@ -23,7 +24,7 @@ export default function AnnouncementCard({ announcement }) {
         {announcement.title}
       </Text>
       <Text style={[styles.description, { color: colors.textMuted }]}>
-        {announcement.description}
+        {htmlToPlainText(announcement.description)}
       </Text>
     </TouchableOpacity>
   );

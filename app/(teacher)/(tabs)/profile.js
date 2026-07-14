@@ -2,14 +2,12 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../../../contexts";
-import AppBackground from "../../../components/common/AppBackground";
 
 export default function TeacherProfileScreen() {
   const { colors } = useTheme();
 
   return (
-    <AppBackground>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView edges={["left", "right"]} style={styles.container}>
         <View style={styles.content}>
           <View style={styles.profileHeader}>
             <View style={styles.avatar}>
@@ -81,7 +79,6 @@ export default function TeacherProfileScreen() {
           </View>
         </View>
       </SafeAreaView>
-    </AppBackground>
   );
 }
 

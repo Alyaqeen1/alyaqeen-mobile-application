@@ -4,6 +4,13 @@ import { useTheme } from "../../contexts";
 
 export default function StudentCard({ student }) {
   const { colors } = useTheme();
+  const title = student?.name || "Student";
+  const subtitle =
+    student?.grade ||
+    student?.class ||
+    student?.rollNumber ||
+    student?.academic?.class ||
+    "Details unavailable";
 
   return (
     <TouchableOpacity
@@ -17,14 +24,16 @@ export default function StudentCard({ student }) {
       ]}
     >
       <View style={styles.avatar}>
-        <Text style={styles.avatarText}>{student.name.charAt(0)}</Text>
+        <Text style={styles.avatarText}>
+          {title.charAt(0).toUpperCase()}
+        </Text>
       </View>
       <View style={styles.info}>
         <Text style={[styles.name, { color: colors.textStrong }]}>
-          {student.name}
+          {title}
         </Text>
         <Text style={[styles.grade, { color: colors.textMuted }]}>
-          {student.grade}
+          {subtitle}
         </Text>
       </View>
     </TouchableOpacity>

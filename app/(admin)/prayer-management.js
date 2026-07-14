@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function AdminPrayerManagementScreen() {
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView edges={["left", "right"]} style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.title}>Prayer Management</Text>
         <Text style={styles.subtitle}>Manage prayer times and schedules</Text>

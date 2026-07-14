@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Link } from "expo-router";
 import { useTheme } from "../../../contexts";
-import AppBackground from "../../../components/common/AppBackground";
 
 const menuItems = [
   { label: "Prayer Timetable", href: "/(public)/prayer-timetable" },
@@ -21,8 +20,7 @@ export default function PublicMoreScreen() {
   const { colors } = useTheme();
 
   return (
-    <AppBackground>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView edges={["left", "right"]} style={styles.container}>
         <View style={styles.header}>
           <Text style={[styles.title, { color: colors.textStrong }]}>More</Text>
         </View>
@@ -40,7 +38,6 @@ export default function PublicMoreScreen() {
           ))}
         </View>
       </SafeAreaView>
-    </AppBackground>
   );
 }
 

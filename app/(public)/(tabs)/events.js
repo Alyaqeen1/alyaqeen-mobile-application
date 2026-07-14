@@ -4,14 +4,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { dummyEvents } from "../../../dummy-data/events.js";
 import EventCard from "../../../components/cards/EventCard.js";
 import { useTheme } from "../../../contexts";
-import AppBackground from "../../../components/common/AppBackground";
 
 export default function PublicEventsScreen() {
   const { colors } = useTheme();
 
   return (
-    <AppBackground>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView edges={["left", "right"]} style={styles.container}>
         <View style={styles.header}>
           <Text style={[styles.title, { color: colors.textStrong }]}>Events</Text>
           <Text style={[styles.subtitle, { color: colors.textMuted }]}>
@@ -29,7 +27,6 @@ export default function PublicEventsScreen() {
           contentContainerStyle={styles.listContent}
         />
       </SafeAreaView>
-    </AppBackground>
   );
 }
 

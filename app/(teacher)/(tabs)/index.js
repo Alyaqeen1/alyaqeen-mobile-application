@@ -5,7 +5,6 @@ import { dummyStudents } from "../../../dummy-data/students.js";
 import DashboardStatCard from "../../../components/cards/DashboardStatCard.js";
 import StudentCard from "../../../components/cards/StudentCard.js";
 import { useTheme } from "../../../contexts";
-import AppBackground from "../../../components/common/AppBackground";
 
 export default function TeacherDashboardScreen() {
   const { colors } = useTheme();
@@ -16,8 +15,7 @@ export default function TeacherDashboardScreen() {
   ];
 
   return (
-    <AppBackground>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView edges={["left", "right"]} style={styles.container}>
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
           <View style={styles.section}>
             <Text style={[styles.greeting, { color: colors.textStrong }]}>
@@ -46,7 +44,6 @@ export default function TeacherDashboardScreen() {
           </View>
         </ScrollView>
       </SafeAreaView>
-    </AppBackground>
   );
 }
 
