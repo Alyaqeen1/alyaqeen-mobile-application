@@ -13,7 +13,7 @@ import {
   TouchableWithoutFeedback,
   ScrollView,
 } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { useTheme } from "../../contexts";
 import { LinearGradient } from "expo-linear-gradient";
@@ -26,7 +26,6 @@ import { getDashboardRouteForRole } from "../../utils";
 
 export default function LoginScreen() {
   const { isDark, colors } = useTheme();
-  const insets = useSafeAreaInsets();
   const { user, userRole, signInUser, loading: authLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -91,7 +90,7 @@ export default function LoginScreen() {
         <SafeAreaView style={styles.safeArea} edges={["top"]}>
           <ThemeToggleButton
             accessibilityLabel="Toggle app theme on login screen"
-            style={[styles.themeToggle, { top: insets.top + 12 }]}
+            style={styles.themeToggle}
           />
           <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -298,7 +297,6 @@ export default function LoginScreen() {
                     </TouchableOpacity>
                   </View>
 
-                  {/* Back to Home */}
                   <TouchableOpacity
                     style={styles.backButton}
                     onPress={() => router.replace("/(public)/(tabs)")}

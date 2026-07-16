@@ -9,6 +9,12 @@ export const studentsApi = apiSlice.injectEndpoints({
       providesTags: ["Student"],
     }),
 
+    // âœ… KEEP - Teacher loads students for a selected group/class
+    getStudentsByGroup: builder.query({
+      query: (groupId) => `/students/by-group/${groupId}`,
+      providesTags: ["Student"],
+    }),
+
     // ✅ KEEP - Student count on Admin dashboard
     getStudentCount: builder.query({
       query: () => `/students/count`,
@@ -75,6 +81,7 @@ export const studentsApi = apiSlice.injectEndpoints({
 export const {
   // Query hooks
   useGetStudentQuery,
+  useGetStudentsByGroupQuery,
   useGetStudentCountQuery,
   useGetStudentByActivityQuery,
   useGetCurrentMonthStatsQuery,

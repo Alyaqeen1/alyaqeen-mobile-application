@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../contexts";
 
 export const TAB_BAR_BASE_HEIGHT = 60;
-export const TAB_BAR_SCENE_PADDING = 112;
+export const TAB_BAR_SCENE_PADDING = 124;
 
 export default function FloatingTabBar({ state, descriptors, navigation }) {
   const { colors, isDark } = useTheme();
@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-around",
     alignItems: "flex-end",
-    paddingTop: 4,
+    paddingTop: 6,
     paddingHorizontal: 8,
     borderTopWidth: 1,
   },
@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 4,
+    paddingVertical: 6,
     paddingHorizontal: 4,
     borderRadius: 12,
   },
