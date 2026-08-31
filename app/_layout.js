@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Stack } from "expo-router";
 import { Provider } from "react-redux";
 import { store } from "../redux/store";
@@ -7,13 +7,30 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { ThemeProvider } from "../contexts";
 import AuthProvider from "../contexts/AuthContext";
 import Toast from "react-native-toast-message";
+import * as ExpoSplashScreen from "expo-splash-screen";
 import "../global.css";
 
+let splashCompletedGuard = false;
+
+ExpoSplashScreen.preventAutoHideAsync().catch(() => {});
+
 function ThemedApp() {
-  const [isSplashVisible, setIsSplashVisible] = useState(true);
+  const [isSplashVisible, setIsSplashVisible] = useState(
+    !splashCompletedGuard
+  );
+
+  // Hide the NATIVE Expo splash once React has mounted
+  useEffect(() => {
+    ExpoSplashScreen.hideAsync().catch(() => {});
+  }, []);
+
+  const handleSplashFinish = () => {
+    splashCompletedGuard = true;
+    setIsSplashVisible(false);
+  };
 
   if (isSplashVisible) {
-    return <SplashScreen onFinish={() => setIsSplashVisible(false)} />;
+    return <SplashScreen onFinish={handleSplashFinish} />;
   }
 
   return (

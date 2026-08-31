@@ -23,6 +23,7 @@ export const apiSlice = createApi({
     "Blog",
     "Complaint",
     "Search",
+    "YearlyReport",
   ], // Add both Student & Family tags here
   endpoints: (builder) => ({}),
 });

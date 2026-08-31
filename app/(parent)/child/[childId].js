@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  FlatList,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -25,6 +26,8 @@ import {
 import { useGetMeritsOfStudentQuery } from "../../../redux/features/merits/meritsApi";
 import { useGetDepartmentsQuery } from "../../../redux/features/departments/departmentsApi";
 import { useGetClassesQuery } from "../../../redux/features/classes/classesApi";
+// ===== NEW: Import yearly reports API =====
+import { useGetStudentYearlyReportsQuery } from "../../../redux/features/yearly_reports/yearly_reportsApi"
 
 const MONTH_OPTIONS = [
   { value: "01", label: "January" },
@@ -171,7 +174,6 @@ function getAttendanceStatus(record) {
     return directStatus;
   }
 
-  // Some records keep "present" as the base state and a separate late flag.
   if (
     record?.late === true ||
     record?.isLate === true ||
@@ -182,6 +184,55 @@ function getAttendanceStatus(record) {
   }
 
   return null;
+}
+
+// ===== HELPER: Format date for display =====
+function formatDate(dateString) {
+  if (!dateString) return "N/A";
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "N/A";
+    return date.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  } catch {
+    return "N/A";
+  }
+}
+
+// ===== HELPER: Get subject display name =====
+function getSubjectDisplayName(key) {
+  const names = {
+    qaidah_quran: "Quran / Qaidah",
+    islamic_studies: "Islamic Studies",
+    dua_surah: "Dua / Surah",
+    gift_for_muslim: "Gift for Muslim",
+  };
+  return names[key] || key.replace(/_/g, " ").toUpperCase();
+}
+
+// ===== HELPER: Get subject icon =====
+function getSubjectIcon(key) {
+  const icons = {
+    qaidah_quran: "📖",
+    islamic_studies: "🕌",
+    dua_surah: "✨",
+    gift_for_muslim: "🎁",
+  };
+  return icons[key] || "📚";
+}
+
+// ===== HELPER: Get subject color =====
+function getSubjectColor(key) {
+  const colors = {
+    qaidah_quran: "#3498db",
+    islamic_studies: "#27ae60",
+    dua_surah: "#8e44ad",
+    gift_for_muslim: "#e67e22",
+  };
+  return colors[key] || "#666";
 }
 
 export default function ParentChildDetailsScreen() {
@@ -259,6 +310,385 @@ export default function ParentChildDetailsScreen() {
     { skip: !selectedChild?._id || activeDetailTab !== "awards" }
   );
 
+  // ===== NEW: Fetch yearly reports for the child =====
+  const {
+    data: yearlyReports = [],
+    isLoading: reportsLoading,
+    isError: reportsError,
+    refetch: refetchReports,
+  } = useGetStudentYearlyReportsQuery(
+    {
+      studentId: selectedChild?._id,
+      // No academic_year filter to get all years
+    },
+    {
+      skip: !selectedChild?._id || activeDetailTab !== "performance",
+      refetchOnMountOrArgChange: true,
+    }
+  );
+
+  // Filter only published reports
+  const publishedReports = yearlyReports.filter(
+    (report) => report.is_published === true
+  );
+
+  // Group reports by academic year
+  const groupedReports = publishedReports.reduce((acc, report) => {
+    const year = report.academic_year;
+    if (!acc[year]) {
+      acc[year] = {
+        academic_year: year,
+        beginning: null,
+        ending: null,
+        type: report.type,
+        notes: [],
+      };
+    }
+
+    if (report.notes && report.notes.length > 0) {
+      acc[year].notes = [...acc[year].notes, ...report.notes];
+    }
+
+    if (report.report_type === "beginning_of_year") {
+      acc[year].beginning = report;
+    } else if (report.report_type === "end_of_year") {
+      acc[year].ending = report;
+    }
+
+    if (!acc[year].type && report.type) {
+      acc[year].type = report.type;
+    }
+
+    return acc;
+  }, {});
+
+  const groupedReportsArray = Object.values(groupedReports);
+
+  // ===== Render subject details for a report =====
+  const renderSubjectDetails = (lessons, type) => {
+    if (!lessons) return null;
+
+    const subjectKeys = type === "gift_muslim"
+      ? ["qaidah_quran", "gift_for_muslim"]
+      : ["qaidah_quran", "islamic_studies", "dua_surah"];
+
+    return subjectKeys.map((key) => {
+      const subject = lessons[key];
+      if (!subject) return null;
+
+      let fields = [];
+      if (key === "qaidah_quran") {
+        const q = subject;
+        if (q.selected === "quran" || q.selected === "hifz") {
+          fields = [
+            { label: "Para", value: q.data?.para || "N/A" },
+            { label: "Page", value: q.data?.page || "N/A" },
+            { label: "Line", value: q.data?.line || "N/A" },
+          ];
+        } else {
+          fields = [
+            { label: "Level", value: q.data?.level || "N/A" },
+            { label: "Lesson", value: q.data?.lesson_name || "N/A" },
+            { label: "Page", value: q.data?.page || "N/A" },
+            { label: "Line", value: q.data?.line || "N/A" },
+          ];
+        }
+      } else if (key === "islamic_studies") {
+        fields = [
+          { label: "Book", value: subject.book || "N/A" },
+          { label: "Page", value: subject.page || "N/A" },
+          { label: "Lesson", value: subject.lesson_name || "N/A" },
+        ];
+      } else if (key === "dua_surah") {
+        fields = [
+          { label: "Book", value: subject.book || "N/A" },
+          { label: "Level", value: subject.level || "N/A" },
+          { label: "Page", value: subject.page || "N/A" },
+          { label: "Target", value: subject.target || "N/A" },
+          { label: "Dua #", value: subject.dua_number || "N/A" },
+          { label: "Lesson", value: subject.lesson_name || "N/A" },
+        ];
+      } else if (key === "gift_for_muslim") {
+        fields = [
+          { label: "Level", value: subject.level || "N/A" },
+          { label: "Lesson", value: subject.lesson_name || "N/A" },
+          { label: "Page", value: subject.page || "N/A" },
+          { label: "Target", value: subject.target || "N/A" },
+        ];
+      }
+
+      return (
+        <View
+          key={key}
+          style={[
+            styles.subjectCard,
+            {
+              backgroundColor: colors.surfaceSoft,
+              borderColor: colors.border,
+              borderLeftColor: getSubjectColor(key),
+            },
+          ]}
+        >
+          <View style={styles.subjectHeader}>
+            <Text style={styles.subjectIcon}>{getSubjectIcon(key)}</Text>
+            <Text style={[styles.subjectTitle, { color: colors.textStrong }]}>
+              {getSubjectDisplayName(key)}
+            </Text>
+          </View>
+          <View style={styles.subjectFields}>
+            {fields.map((field, idx) => (
+              <View key={idx} style={styles.fieldRow}>
+                <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>
+                  {field.label}:
+                </Text>
+                <Text style={[styles.fieldValue, { color: colors.textStrong }]}>
+                  {field.value}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      );
+    });
+  };
+
+  // ===== Render notes =====
+  const renderNotes = (notes) => {
+    if (!notes || notes.length === 0) return null;
+
+    return (
+      <View style={styles.notesContainer}>
+        <Text style={[styles.notesTitle, { color: colors.textStrong }]}>
+          📝 Notes ({notes.length})
+        </Text>
+        {notes.slice(0, 3).map((note, idx) => (
+          <View
+            key={note.id || idx}
+            style={[
+              styles.noteItem,
+              {
+                backgroundColor: colors.surfaceSoft,
+                borderColor: colors.border,
+              },
+            ]}
+          >
+            <Text style={[styles.noteText, { color: colors.textStrong }]}>
+              {note.text}
+            </Text>
+            <Text style={[styles.noteDate, { color: colors.textMuted }]}>
+              {formatDate(note.date)}
+            </Text>
+          </View>
+        ))}
+        {notes.length > 3 && (
+          <Text style={[styles.notesMore, { color: colors.textMuted }]}>
+            +{notes.length - 3} more notes
+          </Text>
+        )}
+      </View>
+    );
+  };
+
+  // ===== Render a single year report =====
+ // ===== Render a single year report with single box layout =====
+// ===== FIXED: Render a single year report with single box layout =====
+const renderYearReport = (yearData) => {
+  const hasBeginning = !!yearData.beginning;
+  const hasEnding = !!yearData.ending;
+  const type = yearData.type || "normal";
+
+  // Get all subjects from both beginning and end
+  const getSubjectKeys = () => {
+    const keys = type === "gift_muslim"
+      ? ["qaidah_quran", "gift_for_muslim"]
+      : ["qaidah_quran", "islamic_studies", "dua_surah"];
+    return keys;
+  };
+
+  const subjectKeys = getSubjectKeys();
+
+  return (
+    <View
+      key={yearData.academic_year}
+      style={[
+        styles.yearCard,
+        {
+          backgroundColor: colors.surface,
+          borderColor: colors.border,
+          shadowColor: colors.shadowColor,
+        },
+      ]}
+    >
+      <Text style={[styles.yearTitle, { color: colors.textStrong }]}>
+        📅 {yearData.academic_year}
+      </Text>
+
+      {/* Show a message if no reports */}
+      {!hasBeginning && !hasEnding && (
+        <Text style={[styles.noDataText, { color: colors.textMuted }]}>
+          No reports available for this year
+        </Text>
+      )}
+
+      {/* Subject-wise comparison in single box */}
+      {subjectKeys.map((subjectKey) => {
+        const beginSubject = yearData.beginning?.lessons?.[subjectKey];
+        const endSubject = yearData.ending?.lessons?.[subjectKey];
+
+        if (!beginSubject && !endSubject) return null;
+
+        // Get fields for both beginning and end - FIXED
+        const getFieldData = () => {
+          const fields = [];
+          
+          if (subjectKey === "qaidah_quran") {
+            const qBegin = beginSubject;
+            const qEnd = endSubject;
+            
+            if (qBegin && (qBegin.selected === "quran" || qBegin.selected === "hifz")) {
+              fields.push(
+                { label: "Para", beginValue: qBegin.data?.para || "N/A", endValue: qEnd?.data?.para || "N/A" },
+                { label: "Page", beginValue: qBegin.data?.page || "N/A", endValue: qEnd?.data?.page || "N/A" },
+                { label: "Line", beginValue: qBegin.data?.line || "N/A", endValue: qEnd?.data?.line || "N/A" }
+              );
+            } else {
+              fields.push(
+                { label: "Level", beginValue: qBegin?.data?.level || "N/A", endValue: qEnd?.data?.level || "N/A" },
+                { label: "Lesson", beginValue: qBegin?.data?.lesson_name || "N/A", endValue: qEnd?.data?.lesson_name || "N/A" },
+                { label: "Page", beginValue: qBegin?.data?.page || "N/A", endValue: qEnd?.data?.page || "N/A" },
+                { label: "Line", beginValue: qBegin?.data?.line || "N/A", endValue: qEnd?.data?.line || "N/A" }
+              );
+            }
+          } else if (subjectKey === "islamic_studies") {
+            const isBegin = beginSubject;
+            const isEnd = endSubject;
+            fields.push(
+              { label: "Book", beginValue: isBegin?.book || "N/A", endValue: isEnd?.book || "N/A" },
+              { label: "Page", beginValue: isBegin?.page || "N/A", endValue: isEnd?.page || "N/A" },
+              { label: "Lesson", beginValue: isBegin?.lesson_name || "N/A", endValue: isEnd?.lesson_name || "N/A" }
+            );
+          } else if (subjectKey === "dua_surah") {
+            const dsBegin = beginSubject;
+            const dsEnd = endSubject;
+            fields.push(
+              { label: "Book", beginValue: dsBegin?.book || "N/A", endValue: dsEnd?.book || "N/A" },
+              { label: "Level", beginValue: dsBegin?.level || "N/A", endValue: dsEnd?.level || "N/A" },
+              { label: "Page", beginValue: dsBegin?.page || "N/A", endValue: dsEnd?.page || "N/A" },
+              { label: "Target", beginValue: dsBegin?.target || "N/A", endValue: dsEnd?.target || "N/A" },
+              { label: "Dua #", beginValue: dsBegin?.dua_number || "N/A", endValue: dsEnd?.dua_number || "N/A" },
+              { label: "Lesson", beginValue: dsBegin?.lesson_name || "N/A", endValue: dsEnd?.lesson_name || "N/A" }
+            );
+          } else if (subjectKey === "gift_for_muslim") {
+            const gmBegin = beginSubject;
+            const gmEnd = endSubject;
+            fields.push(
+              { label: "Level", beginValue: gmBegin?.level || "N/A", endValue: gmEnd?.level || "N/A" },
+              { label: "Lesson", beginValue: gmBegin?.lesson_name || "N/A", endValue: gmEnd?.lesson_name || "N/A" },
+              { label: "Page", beginValue: gmBegin?.page || "N/A", endValue: gmEnd?.page || "N/A" },
+              { label: "Target", beginValue: gmBegin?.target || "N/A", endValue: gmEnd?.target || "N/A" }
+            );
+          }
+          
+          return fields;
+        };
+
+        const subjectFields = getFieldData();
+
+        // If no fields, skip
+        if (subjectFields.length === 0) return null;
+
+        return (
+          <View
+            key={subjectKey}
+            style={[
+              styles.subjectComparisonCard,
+              {
+                backgroundColor: colors.surfaceSoft,
+                borderColor: colors.border,
+                borderLeftColor: getSubjectColor(subjectKey),
+              },
+            ]}
+          >
+            <View style={styles.subjectHeader}>
+              <Text style={styles.subjectIcon}>{getSubjectIcon(subjectKey)}</Text>
+              <Text style={[styles.subjectTitle, { color: colors.textStrong }]}>
+                {getSubjectDisplayName(subjectKey)}
+              </Text>
+            </View>
+
+            {/* Comparison Table */}
+            <View style={styles.comparisonTable}>
+              {/* Header */}
+              <View style={styles.comparisonHeader}>
+                <Text style={[styles.comparisonHeaderText, { color: colors.textMuted }]}>
+                  Subject
+                </Text>
+                <Text style={[styles.comparisonHeaderText, { color: colors.textMuted }]}>
+                  Beginning
+                </Text>
+                <Text style={[styles.comparisonHeaderText, { color: colors.textMuted }]}>
+                  →
+                </Text>
+                <Text style={[styles.comparisonHeaderText, { color: colors.textMuted }]}>
+                  End
+                </Text>
+              </View>
+
+              {/* Rows */}
+              {subjectFields.map((field, idx) => {
+                const hasBegin = field.beginValue && field.beginValue !== "N/A";
+                const hasEnd = field.endValue && field.endValue !== "N/A";
+                
+                // Skip if both are N/A
+                if (!hasBegin && !hasEnd) return null;
+                
+                return (
+                  <View
+                    key={idx}
+                    style={[
+                      styles.comparisonRow,
+                      idx % 2 === 0 && { backgroundColor: "rgba(0,0,0,0.03)" },
+                    ]}
+                  >
+                    <Text style={[styles.comparisonLabel, { color: colors.textMuted }]}>
+                      {field.label}:
+                    </Text>
+                    <Text style={[styles.comparisonValue, { color: hasBegin ? colors.textStrong : colors.textMuted }]}>
+                      {field.beginValue || "N/A"}
+                    </Text>
+                    <Text style={[styles.comparisonArrow, { color: colors.textMuted }]}>
+                      →
+                    </Text>
+                    <Text style={[styles.comparisonValue, { color: hasEnd ? colors.textStrong : colors.textMuted }]}>
+                      {field.endValue || "N/A"}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+
+            {/* Status Badges */}
+            <View style={styles.statusBadges}>
+              {hasBeginning && (
+                <View style={[styles.statusBadge, { backgroundColor: "#3498db" }]}>
+                  <Text style={styles.statusBadgeText}>📘 Beginning</Text>
+                </View>
+              )}
+              {hasEnding && (
+                <View style={[styles.statusBadge, { backgroundColor: "#e67e22" }]}>
+                  <Text style={styles.statusBadgeText}>📗 End</Text>
+                </View>
+              )}
+            </View>
+          </View>
+        );
+      })}
+
+      {/* Notes */}
+      {renderNotes(yearData.notes)}
+    </View>
+  );
+};
   const attendanceData = {
     present:
       typeof attendanceSummary?.present === "number"
@@ -292,7 +722,9 @@ export default function ParentChildDetailsScreen() {
     { key: "attendance", label: "Attendance" },
     { key: "performance", label: "Performance" },
     { key: "awards", label: "Awards" },
+        { key: "fees", label: "Fees" },
   ];
+
   const calendarCells = useMemo(() => {
     const monthRecordMap = new Map();
 
@@ -349,6 +781,9 @@ export default function ParentChildDetailsScreen() {
       (current) => new Date(current.getFullYear(), current.getMonth() + 1, 1)
     );
   };
+
+  // ===== Calculate if there are any published reports =====
+  const hasPublishedReports = groupedReportsArray.length > 0;
 
   return (
     <SafeAreaView edges={["left", "right"]} style={styles.container}>
@@ -628,56 +1063,96 @@ export default function ParentChildDetailsScreen() {
               )
             ) : null}
 
+            {/* ===== PERFORMANCE TAB - UPDATED WITH YEARLY REPORTS ===== */}
             {activeDetailTab === "performance" ? (
-              <View
-                style={[
-                  styles.panel,
-                  {
-                    backgroundColor: colors.surface,
-                    borderColor: colors.border,
-                    shadowColor: colors.shadowColor,
-                  },
-                ]}
-              >
-                <Text style={[styles.panelTitle, { color: colors.textStrong }]}>
-                  Academic profile
-                </Text>
+              reportsLoading ? (
+                <LoadingSpinner label="Loading reports..." />
+              ) : reportsError ? (
+                <ErrorState
+                  title="Couldn't load reports"
+                  message="Try again to see performance details."
+                  onRetry={refetchReports}
+                />
+              ) : (
+                <>
+                  {/* Academic Profile */}
+                  <View
+                    style={[
+                      styles.panel,
+                      {
+                        backgroundColor: colors.surface,
+                        borderColor: colors.border,
+                        shadowColor: colors.shadowColor,
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.panelTitle, { color: colors.textStrong }]}>
+                      Academic profile
+                    </Text>
 
-                <View style={styles.kvList}>
-                  <View style={styles.kvRow}>
-                    <Text style={[styles.kvLabel, { color: colors.textMuted }]}>
-                      Department
-                    </Text>
-                    <Text style={[styles.kvValue, { color: colors.textStrong }]}>
-                      {selectedAcademicDisplay.departments.join(", ")}
-                    </Text>
+                    <View style={styles.kvList}>
+                      <View style={styles.kvRow}>
+                        <Text style={[styles.kvLabel, { color: colors.textMuted }]}>
+                          Department
+                        </Text>
+                        <Text style={[styles.kvValue, { color: colors.textStrong }]}>
+                          {selectedAcademicDisplay.departments.join(", ")}
+                        </Text>
+                      </View>
+                      <View style={styles.kvRow}>
+                        <Text style={[styles.kvLabel, { color: colors.textMuted }]}>
+                          Class
+                        </Text>
+                        <Text style={[styles.kvValue, { color: colors.textStrong }]}>
+                          {selectedAcademicDisplay.classes.join(", ")}
+                        </Text>
+                      </View>
+                      <View style={styles.kvRow}>
+                        <Text style={[styles.kvLabel, { color: colors.textMuted }]}>
+                          Session
+                        </Text>
+                        <Text style={[styles.kvValue, { color: colors.textStrong }]}>
+                          {selectedAcademicDisplay.sessions.join(", ")}
+                        </Text>
+                      </View>
+                      <View style={styles.kvRow}>
+                        <Text style={[styles.kvLabel, { color: colors.textMuted }]}>
+                          Monthly fee
+                        </Text>
+                        <Text style={[styles.kvValue, { color: colors.textStrong }]}>
+                          {formatCurrency(selectedChild.monthly_fee)}
+                        </Text>
+                      </View>
+                    </View>
                   </View>
-                  <View style={styles.kvRow}>
-                    <Text style={[styles.kvLabel, { color: colors.textMuted }]}>
-                      Class
+
+                  {/* Yearly Reports */}
+                  <View
+                    style={[
+                      styles.panel,
+                      {
+                        backgroundColor: colors.surface,
+                        borderColor: colors.border,
+                        shadowColor: colors.shadowColor,
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.panelTitle, { color: colors.textStrong }]}>
+                      📊 Progress Reports
                     </Text>
-                    <Text style={[styles.kvValue, { color: colors.textStrong }]}>
-                      {selectedAcademicDisplay.classes.join(", ")}
-                    </Text>
+
+                    {hasPublishedReports ? (
+                      groupedReportsArray.map((yearData) => renderYearReport(yearData))
+                    ) : (
+                      <EmptyState
+                        title="No published reports"
+                        message="Progress reports will appear here once published by the teacher."
+                        icon="document-text-outline"
+                      />
+                    )}
                   </View>
-                  <View style={styles.kvRow}>
-                    <Text style={[styles.kvLabel, { color: colors.textMuted }]}>
-                      Session
-                    </Text>
-                    <Text style={[styles.kvValue, { color: colors.textStrong }]}>
-                      {selectedAcademicDisplay.sessions.join(", ")}
-                    </Text>
-                  </View>
-                  <View style={styles.kvRow}>
-                    <Text style={[styles.kvLabel, { color: colors.textMuted }]}>
-                      Monthly fee
-                    </Text>
-                    <Text style={[styles.kvValue, { color: colors.textStrong }]}>
-                      {formatCurrency(selectedChild.monthly_fee)}
-                    </Text>
-                  </View>
-                </View>
-              </View>
+                </>
+              )
             ) : null}
 
             {activeDetailTab === "awards" ? (
@@ -965,4 +1440,177 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
   },
+  // ===== NEW STYLES FOR YEARLY REPORTS =====
+  yearCard: {
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 14,
+    marginBottom: 12,
+    gap: 12,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  yearTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  reportSection: {
+    gap: 8,
+    marginTop: 4,
+  },
+  reportHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 2,
+  },
+  reportBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  reportBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 10,
+    fontWeight: "700",
+    textTransform: "uppercase",
+  },
+  reportDate: {
+    fontSize: 11,
+  },
+  subjectCard: {
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 12,
+    marginTop: 4,
+    borderLeftWidth: 4,
+  },
+  subjectHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 6,
+  },
+  subjectIcon: {
+    fontSize: 16,
+  },
+  subjectTitle: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  subjectFields: {
+    paddingLeft: 4,
+    gap: 2,
+  },
+  fieldRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 1,
+  },
+  fieldLabel: {
+    fontSize: 12,
+  },
+  fieldValue: {
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  notesContainer: {
+    marginTop: 6,
+    gap: 6,
+  },
+  notesTitle: {
+    fontSize: 13,
+    fontWeight: "600",
+    marginBottom: 2,
+  },
+  noteItem: {
+    borderRadius: 10,
+    borderWidth: 1,
+    padding: 10,
+    gap: 2,
+  },
+  noteText: {
+    fontSize: 13,
+  },
+  noteDate: {
+    fontSize: 11,
+  },
+  notesMore: {
+    fontSize: 12,
+    fontStyle: "italic",
+    textAlign: "center",
+  },
+  // Add these to your styles object
+subjectComparisonCard: {
+  borderRadius: 12,
+  borderWidth: 1,
+  padding: 12,
+  marginTop: 8,
+  borderLeftWidth: 4,
+},
+comparisonTable: {
+  marginTop: 4,
+},
+comparisonHeader: {
+  flexDirection: "row",
+  paddingVertical: 4,
+  borderBottomWidth: 1,
+  borderBottomColor: "#e0e0e0",
+  marginBottom: 4,
+},
+comparisonHeaderText: {
+  fontSize: 10,
+  fontWeight: "700",
+  textTransform: "uppercase",
+  flex: 1,
+  textAlign: "center",
+},
+comparisonRow: {
+  flexDirection: "row",
+  paddingVertical: 4,
+  borderRadius: 4,
+},
+comparisonLabel: {
+  fontSize: 12,
+  flex: 1.2,
+  paddingLeft: 4,
+},
+comparisonValue: {
+  fontSize: 12,
+  fontWeight: "500",
+  flex: 1,
+  textAlign: "center",
+},
+comparisonArrow: {
+  fontSize: 12,
+  width: 30,
+  textAlign: "center",
+},
+statusBadges: {
+  flexDirection: "row",
+  gap: 8,
+  marginTop: 8,
+  paddingTop: 8,
+  borderTopWidth: 1,
+  borderTopColor: "#e0e0e0",
+},
+statusBadge: {
+  paddingHorizontal: 10,
+  paddingVertical: 3,
+  borderRadius: 12,
+},
+statusBadgeText: {
+  color: "#FFFFFF",
+  fontSize: 10,
+  fontWeight: "600",
+},
+noDataText: {
+  fontSize: 13,
+  fontStyle: "italic",
+  textAlign: "center",
+  paddingVertical: 8,
+},
 });

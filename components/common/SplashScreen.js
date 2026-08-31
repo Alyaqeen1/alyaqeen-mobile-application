@@ -26,15 +26,15 @@ const TRACK_PADDING = 6;
 
 export default function SplashScreen({ onFinish }) {
   const { colors } = useTheme();
-  const insets = useSafeAreaInsets(); // Add this
+  const insets = useSafeAreaInsets();
 
-  // Reanimated shared values
   const translateX = useSharedValue(0);
   const opacity = useSharedValue(1);
   const chevronProgress = useSharedValue(0);
 
   const [trackWidth, setTrackWidth] = useState(SCREEN_WIDTH - 40);
   const hasTriggeredThresholdHaptic = useRef(false);
+  const isCompletingRef = useRef(false);
 
   const maxTranslate = Math.max(trackWidth - KNOB_SIZE - TRACK_PADDING * 2, 1);
   const swipeThreshold = maxTranslate * 0.75;
@@ -71,10 +71,12 @@ export default function SplashScreen({ onFinish }) {
   }, []);
 
   const handleComplete = () => {
+    if (isCompletingRef.current) return;
+    isCompletingRef.current = true;
+
     try {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
-      // Ignore haptics errors
     }
 
     opacity.value = withTiming(0, { duration: 300 });
