@@ -4,12 +4,12 @@
     "slug": "alyaqeen-mobile-application",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/main.png",
     "scheme": "alyaqeen",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/main.png",
       "resizeMode": "contain",
       "backgroundColor": "#F8F5EE"
     },
@@ -18,14 +18,14 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/main.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
       "package": "com.sadia45.alyaqeenmobileapplication"
     },
     "web": {
-      "favicon": "./assets/favicon.png",
+      "favicon": "./assets/main.png",
       "bundler": "metro"
     },
     "plugins": [

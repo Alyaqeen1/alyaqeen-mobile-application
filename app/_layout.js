@@ -1,3 +1,4 @@
+// RootLayout.jsx - Keep it exactly like this (no StripeProvider)
 import React, { useState, useEffect } from "react";
 import { Stack } from "expo-router";
 import { Provider } from "react-redux";
@@ -9,17 +10,13 @@ import AuthProvider from "../contexts/AuthContext";
 import Toast from "react-native-toast-message";
 import * as ExpoSplashScreen from "expo-splash-screen";
 import "../global.css";
+import { StripeProvider } from '@stripe/stripe-react-native';
 
 let splashCompletedGuard = false;
-
 ExpoSplashScreen.preventAutoHideAsync().catch(() => {});
 
 function ThemedApp() {
-  const [isSplashVisible, setIsSplashVisible] = useState(
-    !splashCompletedGuard
-  );
-
-  // Hide the NATIVE Expo splash once React has mounted
+  const [isSplashVisible, setIsSplashVisible] = useState(!splashCompletedGuard);
   useEffect(() => {
     ExpoSplashScreen.hideAsync().catch(() => {});
   }, []);
@@ -46,7 +43,12 @@ function ThemedApp() {
 
 export default function RootLayout() {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+      <StripeProvider
+      publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY}
+      merchantIdentifier="merchant.identifier" // required for Apple Pay
+      urlScheme="your-url-scheme" // required for 3D Secure and bank redirects
+    >
+  <GestureHandlerRootView style={{ flex: 1 }}>
       <Provider store={store}>
         <AuthProvider>
           <ThemeProvider>
@@ -56,5 +58,8 @@ export default function RootLayout() {
         </AuthProvider>
       </Provider>
     </GestureHandlerRootView>
+      {/* Your app code here */}
+    </StripeProvider>
+  
   );
 }

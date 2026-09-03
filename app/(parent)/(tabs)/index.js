@@ -21,6 +21,9 @@ import {
   useGetFamilyDebitQuery,
   useGetFullFamilyQuery,
 } from "../../../redux/features/families/familiesApi";
+import {
+  useGetUnpaidFeesQuery,
+} from "../../../redux/features/fees/feesApi";
 import { useGetAnnouncementByTypeQuery } from "../../../redux/features/announcements/announcementsApi";
 import { useGetDepartmentsQuery } from "../../../redux/features/departments/departmentsApi";
 import { useGetClassesQuery } from "../../../redux/features/classes/classesApi";
@@ -152,6 +155,13 @@ export default function ParentDashboardScreen() {
   });
 
   const {
+    data: unpaidFeesData,
+    isLoading: unpaidFeesLoading,
+  } = useGetUnpaidFeesQuery(enrolledFamily?._id, {
+    skip: !enrolledFamily?._id,
+  });
+
+  const {
     data: announcement,
     isLoading: announcementLoading,
   } = useGetAnnouncementByTypeQuery("parent", {
@@ -168,7 +178,8 @@ export default function ParentDashboardScreen() {
     approvedLoading ||
     enrolledLoading ||
     announcementLoading ||
-    directDebitLoading;
+    directDebitLoading ||
+    unpaidFeesLoading;
 
   const childList = family?.childrenDocs || enrolledFamily?.childrenDocs || [];
   const approvedChildren = approvedFamily?.childrenDocs?.filter(
@@ -193,6 +204,8 @@ export default function ParentDashboardScreen() {
   const directDebitStatus = directDebitData?.directDebit?.status;
   const mandateStatus = directDebitData?.directDebit?.mandateStatus;
   const feeChoice = family?.feeChoice || approvedFamily?.feeChoice;
+  const totalOutstanding = unpaidFeesData?.totalAmount || 0;
+  const unpaidMonthsCount = unpaidFeesData?.unpaidMonths?.length || 0;
   const welcomeName =
     family?.parentName ||
     user?.displayName ||
@@ -320,13 +333,62 @@ export default function ParentDashboardScreen() {
             </Text>
             <TouchableOpacity
               activeOpacity={0.8}
-              onPress={() => router.push("/(parent)/profile")}
+              onPress={() => router.push("/(parent)/(tabs)/fees")}
             >
               <Text style={[styles.sectionLink, { color: colors.gold }]}>
-                View profile
+                View fees →
               </Text>
             </TouchableOpacity>
           </View>
+
+          {totalOutstanding > 0 ? (
+            <TouchableOpacity
+              activeOpacity={0.85}
+              style={[
+                styles.outstandingBanner,
+                {
+                  backgroundColor: "rgba(220, 38, 38, 0.08)",
+                  borderColor: "rgba(220, 38, 38, 0.25)",
+                },
+              ]}
+              onPress={() => router.push("/(parent)/(tabs)/fees")}
+            >
+              <View style={styles.outstandingIconWrap}>
+                <Ionicons name="alert-circle" size={22} color="#DC2626" />
+              </View>
+              <View style={styles.outstandingCopy}>
+                <Text style={[styles.outstandingTitle, { color: "#991B1B" }]}>
+                  You have {unpaidMonthsCount} unpaid month{unpaidMonthsCount === 1 ? "" : "s"}
+                </Text>
+                <Text style={[styles.outstandingSubtitle, { color: "#7F1D1D" }]}>
+                  Outstanding total: {formatCurrency(totalOutstanding)}
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#DC2626" />
+            </TouchableOpacity>
+          ) : (
+            <View
+              style={[
+                styles.outstandingBanner,
+                {
+                  backgroundColor: "rgba(4, 120, 87, 0.08)",
+                  borderColor: "rgba(4, 120, 87, 0.25)",
+                },
+              ]}
+            >
+              <View style={styles.outstandingIconWrap}>
+                <Ionicons name="checkmark-circle" size={22} color="#047857" />
+              </View>
+              <View style={styles.outstandingCopy}>
+                <Text style={[styles.outstandingTitle, { color: "#065F46" }]}>
+                  All payments up to date
+                </Text>
+                <Text style={[styles.outstandingSubtitle, { color: "#047857" }]}>
+                  No outstanding fees. JazakumAllahu khairan!
+                </Text>
+              </View>
+            </View>
+          )}
 
           <View style={styles.paymentList}>
             <View style={styles.paymentRow}>
@@ -660,6 +722,35 @@ const styles = StyleSheet.create({
   },
   helperText: {
     fontSize: 13,
+  },
+  outstandingBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  outstandingIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.5)",
+  },
+  outstandingCopy: {
+    flex: 1,
+    gap: 2,
+  },
+  outstandingTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  outstandingSubtitle: {
+    fontSize: 12,
+    fontWeight: "500",
   },
   paymentList: {
     gap: 10,

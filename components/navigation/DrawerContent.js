@@ -35,6 +35,7 @@ export default function DrawerContent(props) {
     ],
     parent: [
       { label: "Dashboard", href: "/(parent)/(tabs)" },
+      { label: "Fees & Payments", href: "/(parent)/(tabs)/fees" },
       { label: "Prayer Timetable", href: "/(parent)/prayer-timetable" },
       { label: "Ramadan Hub", href: "/(parent)/ramadan-hub" },
       { label: "Announcements", href: "/(parent)/announcements" },

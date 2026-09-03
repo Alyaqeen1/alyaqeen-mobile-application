@@ -12,6 +12,7 @@ import {
   Keyboard,
   TouchableWithoutFeedback,
   ScrollView,
+  Linking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -31,6 +32,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const scrollViewRef = useRef();
 
   const getErrorMessage = (errorCode) => {
@@ -51,9 +53,34 @@ export default function LoginScreen() {
         return "An error occurred. Please try again.";
     }
   };
-
+  const openAdmissionLink = async () => {
+    const url = "https://www.alyaqeen.co.uk/register"; // ← Replace with your actual URL
+    
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: "Cannot open the admission link",
+        });
+      }
+    } catch (error) {
+      console.error("Error opening link:", error);
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to open the link",
+      });
+    }
+  };
+  // ===== FIXED: Check if user is logged in =====
   React.useEffect(() => {
-    if (!authLoading && user) {
+    // Only redirect if not loading and user exists
+    if (!authLoading && user && userRole) {
+      console.log("✅ User authenticated, redirecting to:", userRole);
       router.replace(getDashboardRouteForRole(userRole));
     }
   }, [user, userRole, authLoading]);
@@ -68,6 +95,7 @@ export default function LoginScreen() {
       return;
     }
 
+    setIsLoggingIn(true);
     try {
       await signInUser(email, password);
       Toast.show({
@@ -75,14 +103,21 @@ export default function LoginScreen() {
         text1: "Success!",
         text2: "Logged in successfully!",
       });
+      // Navigation will happen via useEffect
     } catch (error) {
+      console.error("Login error:", error);
       Toast.show({
         type: "error",
         text1: "Login Failed",
         text2: getErrorMessage(error.code),
       });
+    } finally {
+      setIsLoggingIn(false);
     }
   };
+
+  // ===== FIXED: Show loading state only when auth is loading or logging in =====
+  const showLoading = authLoading || isLoggingIn;
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -176,6 +211,7 @@ export default function LoginScreen() {
                       keyboardType="email-address"
                       autoCapitalize="none"
                       autoCorrect={false}
+                      editable={!showLoading}
                     />
                   </View>
 
@@ -209,10 +245,12 @@ export default function LoginScreen() {
                       onChangeText={setPassword}
                       secureTextEntry={!showPassword}
                       autoCapitalize="none"
+                      editable={!showLoading}
                     />
                     <TouchableOpacity
                       style={styles.eyeIcon}
                       onPress={() => setShowPassword(!showPassword)}
+                      disabled={showLoading}
                     >
                       <Ionicons
                         name={showPassword ? "eye-outline" : "eye-off-outline"}
@@ -227,6 +265,7 @@ export default function LoginScreen() {
                     <TouchableOpacity
                       style={styles.rememberButton}
                       onPress={() => setRememberMe(!rememberMe)}
+                      disabled={showLoading}
                     >
                       <View
                         style={[
@@ -249,16 +288,16 @@ export default function LoginScreen() {
                         Remember me
                       </Text>
                     </TouchableOpacity>
-                    <TouchableOpacity>
+                    <TouchableOpacity disabled={showLoading}>
                       <Text style={styles.forgotText}>Forgot?</Text>
                     </TouchableOpacity>
                   </View>
 
                   {/* Login Button */}
                   <TouchableOpacity
-                    style={[styles.loginButton, { opacity: authLoading ? 0.7 : 1 }]}
+                    style={[styles.loginButton, { opacity: showLoading ? 0.7 : 1 }]}
                     onPress={handleLogin}
-                    disabled={authLoading}
+                    disabled={showLoading}
                   >
                     <LinearGradient
                       colors={["#C9A227", "#E0BE4D"]}
@@ -266,7 +305,7 @@ export default function LoginScreen() {
                       end={{ x: 1, y: 0 }}
                       style={styles.loginGradient}
                     >
-                      {authLoading ? (
+                      {showLoading ? (
                         <ActivityIndicator color="#FFFFFF" />
                       ) : (
                         <View style={styles.loginButtonContent}>
@@ -283,23 +322,28 @@ export default function LoginScreen() {
                   </TouchableOpacity>
 
                   {/* Sign Up Link */}
-                  <View style={styles.signupContainer}>
-                    <Text
-                      style={[
-                        styles.signupText,
-                        { color: colors.textMuted },
-                      ]}
-                    >
-                      New family?{" "}
-                    </Text>
-                    <TouchableOpacity>
-                      <Text style={styles.applyText}>Apply for admission</Text>
-                    </TouchableOpacity>
-                  </View>
+                   <View style={styles.signupContainer}>
+      <Text
+        style={[
+          styles.signupText,
+          { color: colors.textMuted },
+        ]}
+      >
+        New family?{" "}
+      </Text>
+      <TouchableOpacity 
+        onPress={openAdmissionLink} 
+        disabled={showLoading}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.applyText}>Apply for admission</Text>
+      </TouchableOpacity>
+    </View>
 
                   <TouchableOpacity
                     style={styles.backButton}
                     onPress={() => router.replace("/(public)/(tabs)")}
+                    disabled={showLoading}
                   >
                     <Text style={styles.backText}>← Back to Public Home</Text>
                   </TouchableOpacity>

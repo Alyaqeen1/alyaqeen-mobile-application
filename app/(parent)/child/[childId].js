@@ -722,7 +722,6 @@ const renderYearReport = (yearData) => {
     { key: "attendance", label: "Attendance" },
     { key: "performance", label: "Performance" },
     { key: "awards", label: "Awards" },
-        { key: "fees", label: "Fees" },
   ];
 
   const calendarCells = useMemo(() => {
