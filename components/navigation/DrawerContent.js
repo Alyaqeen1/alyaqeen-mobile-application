@@ -20,8 +20,8 @@ export default function DrawerContent(props) {
   const { user, userRole, signOutUser } = useAuth();
   const { isDark, colors } = useTheme();
   
-  // Use userRole if available, otherwise default to public
-  const currentRole = userRole || "public";
+  const isPrivilegedRole = ["admin", "teacher", "parent"].includes(userRole);
+  const currentRole = isPrivilegedRole ? userRole : "public";
 
   const menuItems = {
     public: [
@@ -31,7 +31,7 @@ export default function DrawerContent(props) {
       { label: "Volunteer Opportunities", href: "/(public)/volunteer-opportunities" },
       { label: "Contact Us", href: "/(public)/contact" },
       { label: "Settings", href: "/(public)/settings" },
-      user ? { label: "Logout", href: null } : { label: "Login", href: "/(auth)/login" },
+      { label: "Login", href: "/(auth)/login" },
     ],
     parent: [
       { label: "Dashboard", href: "/(parent)/(tabs)" },
@@ -67,8 +67,36 @@ export default function DrawerContent(props) {
   };
 
   const handleNavigation = (href) => {
-    router.push(href);
-    props.navigation?.closeDrawer();
+    if (!href) return;
+    try {
+      // Close drawer first to prevent navigation conflicts between groups
+      props.navigation?.closeDrawer?.();
+      // Use tiny delay to let drawer close animation begin
+      setTimeout(() => {
+        try {
+          router.push(href);
+        } catch (innerErr) {
+          console.warn("Drawer nav push failed for:", href, "trying navigate:", innerErr?.message || innerErr);
+          try {
+            router.navigate(href);
+          } catch (finalErr) {
+            console.error("Drawer navigation completely failed for:", href, finalErr?.message || finalErr);
+            Toast.show({
+              type: "error",
+              text1: "Navigation Error",
+              text2: "Unable to navigate",
+            });
+          }
+        }
+      }, 50);
+    } catch (err) {
+      console.warn("Drawer navigation failed for:", href, err?.message || err);
+      Toast.show({
+        type: "error",
+        text1: "Navigation Error",
+        text2: "Unable to navigate",
+      });
+    }
   };
 
   const handleLogout = async () => {
@@ -79,13 +107,31 @@ export default function DrawerContent(props) {
         text1: "Success!",
         text2: "Logged out successfully!",
       });
-      props.navigation?.closeDrawer();
-      router.replace("/(public)/(tabs)");
+      props.navigation?.closeDrawer?.();
+      // Explicitly navigate to login after sign-out to bypass any stale
+      // protected-layout render states.
+      setTimeout(() => {
+        try {
+          router.replace("/(auth)/login");
+        } catch (err) {
+          console.warn("Drawer logout redirect to login failed, trying public:", err?.message || err);
+          try {
+            router.replace("/(public)/(tabs)");
+          } catch (innerErr) {
+            console.error("Drawer logout redirect completely failed:", innerErr?.message || innerErr);
+            Toast.show({
+              type: "error",
+              text1: "Navigation Error",
+              text2: "Please restart the app",
+            });
+          }
+        }
+      }, 50);
     } catch (error) {
       Toast.show({
         type: "error",
         text1: "Logout Failed",
-        text2: error.message,
+        text2: error?.message || String(error),
       });
     }
   };
@@ -110,7 +156,7 @@ export default function DrawerContent(props) {
           />
           <View style={styles.headerActions}>
             <ThemeToggleButton style={styles.headerButton} />
-            {user && (
+            {isPrivilegedRole && (
               <TouchableOpacity
                 accessibilityRole="button"
                 accessibilityLabel="Log out"
@@ -130,14 +176,15 @@ export default function DrawerContent(props) {
         </View>
         <View style={styles.menu}>
           {items.map((item, index) => {
-            if (!item) return null;
-            const isActive = item.href && (pathname === item.href || pathname.startsWith(item.href + "/"));
-            
-            // Handle logout separately
-            if (item.label === "Logout") {
-              return null; // We already have logout in header
-            }
-            
+            if (!item || !item.label) return null;
+
+            // Skip any synthetic items without a real href (e.g. Logout placeholder)
+            if (!item.href) return null;
+
+            const isActive =
+              !!item.href &&
+              (pathname === item.href || pathname.startsWith(item.href + "/"));
+
             return (
               <TouchableOpacity
                 key={index}

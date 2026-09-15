@@ -1,3 +1,4 @@
+// app/(parent)/(tabs)/index.jsx
 import React, { useMemo } from "react";
 import {
   View,
@@ -12,99 +13,46 @@ import { router } from "expo-router";
 import { useTheme } from "../../../contexts";
 import useAuth from "../../../hooks/useAuth";
 import LoadingSpinner from "../../../components/common/LoadingSpinner";
-import EmptyState from "../../../components/common/EmptyState";
 import ErrorState from "../../../components/common/ErrorState";
 import { useGetRoleQuery } from "../../../redux/features/role/roleApi";
 import {
-  useGetApprovedFullFamilyQuery,
   useGetEnrolledFullFamilyQuery,
-  useGetFamilyDebitQuery,
   useGetFullFamilyQuery,
+  useGetFamilyDebitQuery,
 } from "../../../redux/features/families/familiesApi";
-import {
-  useGetUnpaidFeesQuery,
-} from "../../../redux/features/fees/feesApi";
+import { useGetUnpaidFeesQuery } from "../../../redux/features/fees/feesApi";
 import { useGetAnnouncementByTypeQuery } from "../../../redux/features/announcements/announcementsApi";
 import { useGetDepartmentsQuery } from "../../../redux/features/departments/departmentsApi";
 import { useGetClassesQuery } from "../../../redux/features/classes/classesApi";
 import { htmlToPlainText } from "../../../utils/html";
 
 const SESSION_LABELS = {
-  fajr: "Fajr",
-  dhuhr: "Dhuhr",
-  asr: "Asr",
-  maghrib: "Maghrib",
-  isha: "Isha",
-  weekend: "Weekend",
-  weekdays: "Weekdays",
-  saturday: "Saturday",
-  sunday: "Sunday",
-  morning: "Morning",
-  afternoon: "Afternoon",
-  evening: "Evening",
+  fajr: "Fajr", dhuhr: "Dhuhr", asr: "Asr", maghrib: "Maghrib",
+  isha: "Isha", weekend: "Weekend", weekdays: "Weekdays",
+  saturday: "Saturday", sunday: "Sunday", morning: "Morning",
+  afternoon: "Afternoon", evening: "Evening",
 };
 
-function getAcademicDisplay(academic, departments, classes) {
-  if (!academic) {
+function getAcademicShort(academic, departments, classes) {
+  if (!academic) return { dept: "Not assigned", cls: "Not assigned", session: "Not set" };
+
+  if (academic.enrollments && Array.isArray(academic.enrollments) && academic.enrollments.length > 0) {
+    const first = academic.enrollments[0];
+    const dept = departments?.find((item) => item._id === first.dept_id);
+    const cls = classes?.find((item) => item._id === first.class_id);
     return {
-      departments: ["Not assigned"],
-      classes: ["Not assigned"],
-      sessions: ["Not set"],
+      dept: dept?.dept_name || "Not assigned",
+      cls: cls?.class_name || "Not assigned",
+      session: SESSION_LABELS[first.session_time] || first.session_time || "Not set",
     };
   }
 
-  if (academic.enrollments && Array.isArray(academic.enrollments)) {
-    const departmentNames = academic.enrollments.map((enrollment) => {
-      const department = departments?.find((item) => item._id === enrollment.dept_id);
-      return department?.dept_name || "Unknown Department";
-    });
-
-    const classNames = academic.enrollments.map((enrollment) => {
-      const currentClass = classes?.find((item) => item._id === enrollment.class_id);
-      return currentClass?.class_name || "Unknown Class";
-    });
-
-    const sessionNames = academic.enrollments.map(
-      (enrollment) =>
-        SESSION_LABELS[enrollment.session_time] ||
-        enrollment.session_time ||
-        "Not set"
-    );
-
-    return {
-      departments: [...new Set(departmentNames)],
-      classes: [...new Set(classNames)],
-      sessions: [...new Set(sessionNames)],
-    };
-  }
-
-  if (academic.dept_id || academic.class_id) {
-    const department = departments?.find((item) => item._id === academic.dept_id);
-    const currentClass = classes?.find((item) => item._id === academic.class_id);
-
-    return {
-      departments: [department?.dept_name || academic.department || "Unknown Department"],
-      classes: [currentClass?.class_name || academic.class || "Unknown Class"],
-      sessions: [
-        SESSION_LABELS[academic.session_time] ||
-          SESSION_LABELS[academic.time] ||
-          academic.session_time ||
-          academic.time ||
-          "Not set",
-      ],
-    };
-  }
-
+  const dept = departments?.find((item) => item._id === academic.dept_id);
+  const cls = classes?.find((item) => item._id === academic.class_id);
   return {
-    departments: [academic.department || "Not assigned"],
-    classes: [academic.class || "Not assigned"],
-    sessions: [
-      SESSION_LABELS[academic.session_time] ||
-        SESSION_LABELS[academic.time] ||
-        academic.session_time ||
-        academic.time ||
-        "Not set",
-    ],
+    dept: dept?.dept_name || academic.department || "Not assigned",
+    cls: cls?.class_name || academic.class || "Not assigned",
+    session: SESSION_LABELS[academic.session_time] || academic.time || "Not set",
   };
 }
 
@@ -116,101 +64,49 @@ export default function ParentDashboardScreen() {
   const { colors } = useTheme();
   const { user, loading: authLoading } = useAuth();
 
-  const {
-    data: roleData,
-    isLoading: roleLoading,
-  } = useGetRoleQuery(user?.email, {
+  const { data: roleData, isLoading: roleLoading } = useGetRoleQuery(user?.email, {
     skip: !user?.email,
   });
 
   const {
     data: family,
     isLoading: familyLoading,
-    isFetching: familyFetching,
     isError: isFamilyError,
     refetch: refetchFamily,
-  } = useGetFullFamilyQuery(undefined, {
-    skip: !user?.email,
-  });
+  } = useGetFullFamilyQuery(undefined, { skip: !user?.email });
 
-  const {
-    data: approvedFamily,
-    isLoading: approvedLoading,
-  } = useGetApprovedFullFamilyQuery(user?.email, {
-    skip: authLoading || !user?.email,
-  });
+  const { data: enrolledFamily, isLoading: enrolledLoading } =
+    useGetEnrolledFullFamilyQuery(user?.email, { skip: authLoading || !user?.email });
 
-  const {
-    data: enrolledFamily,
-    isLoading: enrolledLoading,
-  } = useGetEnrolledFullFamilyQuery(user?.email, {
-    skip: authLoading || !user?.email,
-  });
+  const { data: directDebitData, isLoading: directDebitLoading } =
+    useGetFamilyDebitQuery(enrolledFamily?._id, { skip: !enrolledFamily?._id });
 
-  const {
-    data: directDebitData,
-    isLoading: directDebitLoading,
-  } = useGetFamilyDebitQuery(enrolledFamily?._id, {
-    skip: !enrolledFamily?._id,
-  });
+  const { data: unpaidFeesData, isLoading: unpaidFeesLoading } =
+    useGetUnpaidFeesQuery(enrolledFamily?._id, { skip: !enrolledFamily?._id });
 
-  const {
-    data: unpaidFeesData,
-    isLoading: unpaidFeesLoading,
-  } = useGetUnpaidFeesQuery(enrolledFamily?._id, {
-    skip: !enrolledFamily?._id,
-  });
-
-  const {
-    data: announcement,
-    isLoading: announcementLoading,
-  } = useGetAnnouncementByTypeQuery("parent", {
-    skip: !user?.email,
-  });
+  const { data: announcement, isLoading: announcementLoading } =
+    useGetAnnouncementByTypeQuery("parent", { skip: !user?.email });
 
   const { data: departments } = useGetDepartmentsQuery();
   const { data: classes } = useGetClassesQuery();
 
   const isLoading =
-    authLoading ||
-    roleLoading ||
-    familyLoading ||
-    approvedLoading ||
-    enrolledLoading ||
-    announcementLoading ||
-    directDebitLoading ||
-    unpaidFeesLoading;
+    authLoading || roleLoading || familyLoading || enrolledLoading ||
+    directDebitLoading || unpaidFeesLoading || announcementLoading;
 
   const childList = family?.childrenDocs || enrolledFamily?.childrenDocs || [];
-  const approvedChildren = approvedFamily?.childrenDocs?.filter(
-    (child) => child.status === "approved"
-  ) || [];
-  const enrolledChildren = childList.filter((child) => child.status === "enrolled");
-  const holdChildren = childList.filter((child) => child.status === "hold");
-  const totalMonthlyFee = childList.reduce(
-    (sum, child) => sum + Number(child.monthly_fee || 0),
-    0
-  );
+  const enrolledChildren = childList.filter((c) => c.status === "enrolled");
+  const holdChildren = childList.filter((c) => c.status === "hold");
 
-  const stats = useMemo(
-    () => [
-      { label: "Children", value: `${childList.length}` },
-      { label: "Approved", value: `${approvedChildren.length}` },
-      { label: "Monthly fee", value: formatCurrency(totalMonthlyFee) },
-    ],
-    [approvedChildren.length, childList.length, totalMonthlyFee]
-  );
-
-  const directDebitStatus = directDebitData?.directDebit?.status;
-  const mandateStatus = directDebitData?.directDebit?.mandateStatus;
-  const feeChoice = family?.feeChoice || approvedFamily?.feeChoice;
   const totalOutstanding = unpaidFeesData?.totalAmount || 0;
   const unpaidMonthsCount = unpaidFeesData?.unpaidMonths?.length || 0;
+  const directDebitStatus = directDebitData?.directDebit?.status;
   const welcomeName =
-    family?.parentName ||
-    user?.displayName ||
-    user?.email?.split("@")[0] ||
-    "Parent";
+    family?.parentName || user?.displayName || user?.email?.split("@")[0] || "Parent";
+
+  // Split children into active + pending
+  const activeChildren = childList.filter((c) => c.status !== "rejected");
+  const hasChildren = activeChildren.length > 0;
 
   if (isLoading) {
     return (
@@ -252,347 +148,228 @@ export default function ParentDashboardScreen() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        <View
-          style={[
-            styles.heroCard,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.border,
-              shadowColor: colors.shadowColor,
-            },
-          ]}
-        >
-          <View style={styles.heroHeader}>
-            <View style={styles.heroIconWrap}>
-              <Ionicons color="#FFFFFF" name="people" size={22} />
-            </View>
-            <View style={styles.heroCopy}>
-              <Text style={[styles.greeting, { color: colors.textStrong }]}>
-                Assalamualaikum, {welcomeName}
-              </Text>
-              <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-                Manage your children&apos;s academy details from one place.
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.contactRow}>
-            <View style={styles.contactItem}>
-              <Ionicons color={colors.gold} name="mail-outline" size={16} />
-              <Text style={[styles.contactText, { color: colors.textMuted }]}>
-                {family?.email || user?.email || "No email found"}
-              </Text>
-            </View>
-            {family?.phone ? (
-              <View style={styles.contactItem}>
-                <Ionicons color={colors.gold} name="call-outline" size={16} />
-                <Text style={[styles.contactText, { color: colors.textMuted }]}>
-                  {family.phone}
-                </Text>
-              </View>
-            ) : null}
-          </View>
-        </View>
-
-        <View style={styles.statsSection}>
-          {stats.map((stat) => (
-            <View
-              key={stat.label}
-              style={[
-                styles.statCard,
-                {
-                  backgroundColor: colors.surface,
-                  borderColor: colors.border,
-                  shadowColor: colors.shadowColor,
-                },
-              ]}
-            >
-              <Text style={[styles.statValue, { color: colors.gold }]}>
-                {stat.value}
-              </Text>
-              <Text style={[styles.statLabel, { color: colors.textMuted }]}>
-                {stat.label}
-              </Text>
-            </View>
-          ))}
-        </View>
-
-        <View
-          style={[
-            styles.sectionCard,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.border,
-              shadowColor: colors.shadowColor,
-            },
-          ]}
-        >
-          <View style={styles.sectionHeaderRow}>
-            <Text style={[styles.sectionTitle, { color: colors.textStrong }]}>
-              Payment overview
-            </Text>
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => router.push("/(parent)/(tabs)/fees")}
-            >
-              <Text style={[styles.sectionLink, { color: colors.gold }]}>
-                View fees →
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {totalOutstanding > 0 ? (
-            <TouchableOpacity
-              activeOpacity={0.85}
-              style={[
-                styles.outstandingBanner,
-                {
-                  backgroundColor: "rgba(220, 38, 38, 0.08)",
-                  borderColor: "rgba(220, 38, 38, 0.25)",
-                },
-              ]}
-              onPress={() => router.push("/(parent)/(tabs)/fees")}
-            >
-              <View style={styles.outstandingIconWrap}>
-                <Ionicons name="alert-circle" size={22} color="#DC2626" />
-              </View>
-              <View style={styles.outstandingCopy}>
-                <Text style={[styles.outstandingTitle, { color: "#991B1B" }]}>
-                  You have {unpaidMonthsCount} unpaid month{unpaidMonthsCount === 1 ? "" : "s"}
-                </Text>
-                <Text style={[styles.outstandingSubtitle, { color: "#7F1D1D" }]}>
-                  Outstanding total: {formatCurrency(totalOutstanding)}
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color="#DC2626" />
-            </TouchableOpacity>
-          ) : (
-            <View
-              style={[
-                styles.outstandingBanner,
-                {
-                  backgroundColor: "rgba(4, 120, 87, 0.08)",
-                  borderColor: "rgba(4, 120, 87, 0.25)",
-                },
-              ]}
-            >
-              <View style={styles.outstandingIconWrap}>
-                <Ionicons name="checkmark-circle" size={22} color="#047857" />
-              </View>
-              <View style={styles.outstandingCopy}>
-                <Text style={[styles.outstandingTitle, { color: "#065F46" }]}>
-                  All payments up to date
-                </Text>
-                <Text style={[styles.outstandingSubtitle, { color: "#047857" }]}>
-                  No outstanding fees. JazakumAllahu khairan!
-                </Text>
-              </View>
-            </View>
-          )}
-
-          <View style={styles.paymentList}>
-            <View style={styles.paymentRow}>
-              <Text style={[styles.paymentLabel, { color: colors.textMuted }]}>
-                Fee choice
-              </Text>
-              <Text style={[styles.paymentValue, { color: colors.textStrong }]}>
-                {feeChoice || "Not selected yet"}
-              </Text>
-            </View>
-            <View style={styles.paymentRow}>
-              <Text style={[styles.paymentLabel, { color: colors.textMuted }]}>
-                Direct debit
-              </Text>
-              <Text style={[styles.paymentValue, { color: colors.textStrong }]}>
-                {directDebitStatus || "Not set up"}
-              </Text>
-            </View>
-            {mandateStatus ? (
-              <View style={styles.paymentRow}>
-                <Text style={[styles.paymentLabel, { color: colors.textMuted }]}>
-                  Mandate status
-                </Text>
-                <Text style={[styles.paymentValue, { color: colors.textStrong }]}>
-                  {mandateStatus}
-                </Text>
-              </View>
-            ) : null}
-            <View style={styles.paymentRow}>
-              <Text style={[styles.paymentLabel, { color: colors.textMuted }]}>
-                Approved children
-              </Text>
-              <Text style={[styles.paymentValue, { color: colors.textStrong }]}>
-                {approvedChildren.length}
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        <View
-          style={[
-            styles.sectionCard,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.border,
-              shadowColor: colors.shadowColor,
-            },
-          ]}
-        >
-          <Text style={[styles.sectionTitle, { color: colors.textStrong }]}>
-            Parent message
+        {/* ====== 1. WELCOME HEADER ====== */}
+        <View style={styles.welcomeSection}>
+          <Text style={[styles.greeting, { color: colors.textStrong }]}>
+            Assalamualaikum, {welcomeName} 👋
           </Text>
-          <Text style={[styles.announcementText, { color: colors.textMuted }]}>
-            {htmlToPlainText(
-              announcement?.content ||
-                "Welcome to your parent dashboard. Here you can manage your children's information and keep up with academy updates."
-            )}
+          <Text style={[styles.subtitle, { color: colors.textMuted }]}>
+            {hasChildren
+              ? `You have ${activeChildren.length} child${activeChildren.length > 1 ? "ren" : ""} at Alyaqeen Academy`
+              : "Welcome to your parent dashboard"}
           </Text>
         </View>
 
-        <View style={styles.section}>
-          <View style={styles.sectionHeaderRow}>
-            <Text style={[styles.sectionTitle, { color: colors.textStrong }]}>
-              Your children
-            </Text>
-            {familyFetching ? (
-              <Text style={[styles.helperText, { color: colors.textMuted }]}>
-                Refreshing...
+        {/* ====== 2. PAYMENT ALERT (Only if action needed) ====== */}
+        {totalOutstanding > 0 && (
+          <TouchableOpacity
+            activeOpacity={0.85}
+            style={[
+              styles.alertCard,
+              {
+                backgroundColor: "rgba(220, 38, 38, 0.06)",
+                borderColor: "rgba(220, 38, 38, 0.2)",
+              },
+            ]}
+            onPress={() => router.push("/(parent)/(tabs)/fees")}
+          >
+            <View style={styles.alertIconWrap}>
+              <Ionicons name="alert-circle" size={24} color="#DC2626" />
+            </View>
+            <View style={styles.alertContent}>
+              <Text style={[styles.alertTitle, { color: "#991B1B" }]}>
+                {formatCurrency(totalOutstanding)} outstanding
               </Text>
-            ) : null}
-          </View>
+              <Text style={[styles.alertSubtitle, { color: "#7F1D1D" }]}>
+                {unpaidMonthsCount} month{unpaidMonthsCount === 1 ? "" : "s"} pending payment
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#DC2626" />
+          </TouchableOpacity>
+        )}
 
-          {childList.length === 0 ? (
-            <EmptyState
-              title="No children found"
-              message="Your family profile does not have child records yet."
-              icon="people-outline"
-            />
-          ) : (
-            childList.map((child) => {
-              const academicDisplay = getAcademicDisplay(
-                child.academic,
-                departments,
-                classes
-              );
+        {totalOutstanding === 0 && (
+          <View
+            style={[
+              styles.successCard,
+              {
+                backgroundColor: "rgba(4, 120, 87, 0.06)",
+                borderColor: "rgba(4, 120, 87, 0.2)",
+              },
+            ]}
+          >
+            <Ionicons name="checkmark-circle" size={20} color="#047857" />
+            <Text style={[styles.successText, { color: "#065F46" }]}>
+              All payments up to date
+            </Text>
+          </View>
+        )}
+
+        {/* ====== 3. QUICK ACTIONS ====== */}
+        <View style={styles.quickActionsRow}>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            style={[
+              styles.quickActionCard,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+            onPress={() => router.push("/(parent)/(tabs)/child")}
+          >
+            <View style={[styles.quickActionIcon, { backgroundColor: "rgba(201, 162, 39, 0.12)" }]}>
+              <Ionicons name="people-outline" size={22} color="#C9A227" />
+            </View>
+            <Text style={[styles.quickActionLabel, { color: colors.textStrong }]}>
+              Children
+            </Text>
+            <Text style={[styles.quickActionValue, { color: colors.textMuted }]}>
+              {activeChildren.length} enrolled
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.85}
+            style={[
+              styles.quickActionCard,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+            onPress={() => router.push("/(parent)/(tabs)/fees")}
+          >
+            <View style={[styles.quickActionIcon, { backgroundColor: "rgba(4, 120, 87, 0.12)" }]}>
+              <Ionicons name="card-outline" size={22} color="#047857" />
+            </View>
+            <Text style={[styles.quickActionLabel, { color: colors.textStrong }]}>
+              Fees
+            </Text>
+            <Text style={[styles.quickActionValue, { color: colors.textMuted }]}>
+              {totalOutstanding > 0 ? formatCurrency(totalOutstanding) : "All paid"}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.85}
+            style={[
+              styles.quickActionCard,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+            onPress={() => router.push("/(parent)/(tabs)/academy")}
+          >
+            <View style={[styles.quickActionIcon, { backgroundColor: "rgba(59, 130, 246, 0.12)" }]}>
+              <Ionicons name="school-outline" size={22} color="#3B82F6" />
+            </View>
+            <Text style={[styles.quickActionLabel, { color: colors.textStrong }]}>
+              Academy
+            </Text>
+            <Text style={[styles.quickActionValue, { color: colors.textMuted }]}>
+              Updates
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* ====== 4. YOUR CHILDREN (Simple cards) ====== */}
+        {hasChildren && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeaderRow}>
+              <Text style={[styles.sectionTitle, { color: colors.textStrong }]}>
+                Your children
+              </Text>
+              <TouchableOpacity onPress={() => router.push("/(parent)/(tabs)/child")}>
+                <Text style={[styles.sectionLink, { color: colors.gold }]}>
+                  See all →
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {activeChildren.slice(0, 3).map((child) => {
+              const academic = getAcademicShort(child.academic, departments, classes);
+              const isEnrolled = child.status === "enrolled";
 
               return (
-                <View
+                <TouchableOpacity
                   key={child._id}
+                  activeOpacity={0.85}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/(parent)/child/[childId]",
+                      params: { childId: child._id },
+                    })
+                  }
                   style={[
                     styles.childCard,
                     {
                       backgroundColor: colors.surface,
                       borderColor: colors.border,
-                      shadowColor: colors.shadowColor,
                     },
                   ]}
                 >
-                  <View style={styles.childHeader}>
-                    <View style={styles.avatar}>
-                      <Text style={styles.avatarText}>
-                        {(child.name || "?").charAt(0).toUpperCase()}
-                      </Text>
-                    </View>
-                    <View style={styles.childInfo}>
-                      <Text style={[styles.childName, { color: colors.textStrong }]}>
-                        {child.name}
-                      </Text>
-                      <Text style={[styles.childMeta, { color: colors.textMuted }]}>
-                        Roll number: {child.rollNumber || "Not assigned"}
-                      </Text>
-                    </View>
-                    <View
-                      style={[
-                        styles.statusBadge,
-                        {
-                          backgroundColor: colors.goldSoft,
-                          borderColor: colors.border,
-                        },
-                      ]}
-                    >
-                      <Text style={[styles.statusText, { color: colors.textStrong }]}>
-                        {child.status}
-                      </Text>
-                    </View>
+                  <View style={styles.avatar}>
+                    <Text style={styles.avatarText}>
+                      {(child.name || "?").charAt(0).toUpperCase()}
+                    </Text>
                   </View>
 
-                  <View style={styles.detailGrid}>
-                    <View style={styles.detailItem}>
-                      <Text style={[styles.detailLabel, { color: colors.textMuted }]}>
-                        Department
-                      </Text>
-                      <Text style={[styles.detailValue, { color: colors.textStrong }]}>
-                        {academicDisplay.departments.join(", ")}
-                      </Text>
-                    </View>
-                    <View style={styles.detailItem}>
-                      <Text style={[styles.detailLabel, { color: colors.textMuted }]}>
-                        Class
-                      </Text>
-                      <Text style={[styles.detailValue, { color: colors.textStrong }]}>
-                        {academicDisplay.classes.join(", ")}
-                      </Text>
-                    </View>
-                    <View style={styles.detailItem}>
-                      <Text style={[styles.detailLabel, { color: colors.textMuted }]}>
-                        Session
-                      </Text>
-                      <Text style={[styles.detailValue, { color: colors.textStrong }]}>
-                        {academicDisplay.sessions.join(", ")}
-                      </Text>
-                    </View>
-                    <View style={styles.detailItem}>
-                      <Text style={[styles.detailLabel, { color: colors.textMuted }]}>
-                        Monthly fee
-                      </Text>
-                      <Text style={[styles.detailValue, { color: colors.textStrong }]}>
-                        {formatCurrency(child.monthly_fee)}
-                      </Text>
-                    </View>
+                  <View style={styles.childInfo}>
+                    <Text style={[styles.childName, { color: colors.textStrong }]}>
+                      {child.name}
+                    </Text>
+                    <Text style={[styles.childMeta, { color: colors.textMuted }]}>
+                      {academic.cls} • {academic.session}
+                    </Text>
                   </View>
-                </View>
+
+                  <View
+                    style={[
+                      styles.statusDot,
+                      {
+                        backgroundColor: isEnrolled ? "#047857" : "#D9A147",
+                      },
+                    ]}
+                  />
+
+                  <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+                </TouchableOpacity>
               );
-            })
-          )}
-        </View>
+            })}
 
+            {activeChildren.length > 3 && (
+              <TouchableOpacity
+                style={styles.moreChildrenLink}
+                onPress={() => router.push("/(parent)/(tabs)/child")}
+              >
+                <Text style={[styles.moreChildrenText, { color: colors.gold }]}>
+                  +{activeChildren.length - 3} more
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+
+        {/* ====== 5. MESSAGE FROM ACADEMY ====== */}
         <View
           style={[
-            styles.sectionCard,
+            styles.messageCard,
             {
               backgroundColor: colors.surface,
               borderColor: colors.border,
-              shadowColor: colors.shadowColor,
             },
           ]}
         >
-          <Text style={[styles.sectionTitle, { color: colors.textStrong }]}>
-            Status summary
+          <View style={styles.messageHeader}>
+            <View style={styles.messageIconWrap}>
+              <Ionicons name="megaphone-outline" size={18} color="#C9A227" />
+            </View>
+            <Text style={[styles.messageTitle, { color: colors.textStrong }]}>
+              From the Academy
+            </Text>
+          </View>
+          <Text
+            style={[styles.messageText, { color: colors.textMuted }]}
+            numberOfLines={4}
+          >
+            {htmlToPlainText(
+              announcement?.content ||
+                "Welcome to your parent dashboard. Stay updated with academy announcements and your children's progress."
+            )}
           </Text>
-          <View style={styles.summaryRow}>
-            <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>
-              Enrolled
-            </Text>
-            <Text style={[styles.summaryValue, { color: colors.textStrong }]}>
-              {enrolledChildren.length}
-            </Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>
-              On hold
-            </Text>
-            <Text style={[styles.summaryValue, { color: colors.textStrong }]}>
-              {holdChildren.length}
-            </Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>
-              Family name
-            </Text>
-            <Text style={[styles.summaryValue, { color: colors.textStrong }]}>
-              {family?.familyName || "Not available"}
-            </Text>
-          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -611,196 +388,143 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 10,
     paddingBottom: 24,
-    gap: 16,
+    gap: 20,
   },
   stateWrapper: {
     flex: 1,
     paddingHorizontal: 20,
     justifyContent: "center",
   },
-  section: {
-    gap: 12,
-  },
-  greeting: {
-    fontSize: 24,
-    fontWeight: "bold",
-  },
-  subtitle: {
-    fontSize: 16,
-    lineHeight: 23,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-  },
-  statsSection: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  heroCard: {
-    borderRadius: 24,
-    borderWidth: 1,
-    padding: 20,
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.08,
-    shadowRadius: 18,
-    elevation: 4,
-  },
-  heroHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-  },
-  heroIconWrap: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "#C9A227",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  heroCopy: {
-    flex: 1,
+
+  // Welcome header
+  welcomeSection: {
+    paddingTop: 8,
     gap: 4,
   },
-  contactRow: {
-    marginTop: 16,
+  greeting: {
+    fontSize: 26,
+    fontWeight: "800",
+    lineHeight: 32,
+  },
+  subtitle: {
+    fontSize: 15,
+    lineHeight: 22,
+    marginTop: 4,
+  },
+
+  // Alert card
+  alertCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  alertIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.6)",
+  },
+  alertContent: {
+    flex: 1,
+    gap: 2,
+  },
+  alertTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  alertSubtitle: {
+    fontSize: 12,
+  },
+
+  // Success card
+  successCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  successText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+
+  // Quick actions
+  quickActionsRow: {
+    flexDirection: "row",
     gap: 10,
   },
-  contactItem: {
-    flexDirection: "row",
+  quickActionCard: {
+    flex: 1,
+    padding: 14,
+    borderRadius: 18,
+    borderWidth: 1,
     alignItems: "center",
     gap: 8,
   },
-  contactText: {
-    flex: 1,
-    fontSize: 14,
-  },
-  statCard: {
-    flex: 1,
-    minHeight: 102,
-    borderRadius: 20,
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 16,
+  quickActionIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.06,
-    shadowRadius: 14,
-    elevation: 3,
   },
-  statValue: {
-    fontSize: 18,
-    fontWeight: "800",
+  quickActionLabel: {
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  quickActionValue: {
+    fontSize: 11,
     textAlign: "center",
   },
-  statLabel: {
-    marginTop: 6,
-    fontSize: 12,
-    textAlign: "center",
-  },
-  sectionCard: {
-    borderRadius: 24,
-    borderWidth: 1,
-    padding: 18,
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.07,
-    shadowRadius: 16,
-    elevation: 3,
-    gap: 14,
+
+  // Section
+  section: {
+    gap: 12,
   },
   sectionHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 12,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "700",
   },
   sectionLink: {
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: "600",
   },
-  helperText: {
-    fontSize: 13,
-  },
-  outstandingBanner: {
+
+  // Children cards (simplified)
+  childCard: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
     paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 14,
+    paddingVertical: 14,
+    borderRadius: 18,
     borderWidth: 1,
-  },
-  outstandingIconWrap: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.5)",
-  },
-  outstandingCopy: {
-    flex: 1,
-    gap: 2,
-  },
-  outstandingTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  outstandingSubtitle: {
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  paymentList: {
-    gap: 10,
-  },
-  paymentRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  paymentLabel: {
-    fontSize: 14,
-    flex: 1,
-  },
-  paymentValue: {
-    fontSize: 14,
-    fontWeight: "700",
-    textAlign: "right",
-    flex: 1,
-  },
-  announcementText: {
-    fontSize: 15,
-    lineHeight: 23,
-  },
-  childCard: {
-    borderRadius: 24,
-    borderWidth: 1,
-    padding: 18,
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.07,
-    shadowRadius: 16,
-    elevation: 3,
-    gap: 16,
-  },
-  childHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
   },
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: "#C9A227",
     alignItems: "center",
     justifyContent: "center",
   },
   avatarText: {
     color: "#FFFFFF",
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "800",
   },
   childInfo: {
@@ -808,50 +532,53 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   childName: {
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: "700",
   },
   childMeta: {
+    fontSize: 12,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 4,
+  },
+  moreChildrenLink: {
+    alignItems: "center",
+    paddingVertical: 8,
+  },
+  moreChildrenText: {
     fontSize: 13,
-  },
-  statusBadge: {
-    borderRadius: 999,
-    borderWidth: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: "700",
-    textTransform: "capitalize",
-  },
-  detailGrid: {
-    gap: 12,
-  },
-  detailItem: {
-    gap: 4,
-  },
-  detailLabel: {
-    fontSize: 12,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  detailValue: {
-    fontSize: 14,
     fontWeight: "600",
-    lineHeight: 20,
   },
-  summaryRow: {
+
+  // Message from academy
+  messageCard: {
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 16,
+    gap: 10,
+  },
+  messageHeader: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
+    gap: 10,
   },
-  summaryLabel: {
-    fontSize: 14,
+  messageIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(201, 162, 39, 0.12)",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  summaryValue: {
+  messageTitle: {
     fontSize: 15,
     fontWeight: "700",
+  },
+  messageText: {
+    fontSize: 14,
+    lineHeight: 21,
   },
 });

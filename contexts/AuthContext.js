@@ -11,12 +11,14 @@ import { useGetRoleQuery } from "../redux/features/role/roleApi";
 export const AuthContext = createContext();
 
 // Only use fallback if API fails or returns no role
+// Returns null when no email pattern matches — do NOT invent "public"
+// for authenticated users (that would cause bogus public-role redirects).
 const getFallbackRole = (email) => {
   if (!email) return null;
   if (email.includes("admin")) return "admin";
   if (email.includes("teacher")) return "teacher";
   if (email.includes("parent")) return "parent";
-  return "public";
+  return null;
 };
 
 export default function AuthProvider({ children }) {
@@ -80,9 +82,16 @@ export default function AuthProvider({ children }) {
     // 3. If API has errored or completed with no role, use fallback
     if (roleError || (!roleLoading && !roleFetching && !roleUninitialized && roleData === undefined)) {
       const fallback = getFallbackRole(user?.email);
-      console.log("⚠️ Using fallback role:", fallback);
-      setResolvedRole(fallback);
-      setFallbackRoleApplied(true);
+      if (fallback) {
+        console.log("⚠️ Using fallback role:", fallback);
+        setResolvedRole(fallback);
+        setFallbackRoleApplied(true);
+      } else {
+        // No role hint available — mark fallback pass done so loading can end,
+        // but keep resolvedRole as null (don't fabricate a "public" role).
+        console.log("⚠️ Fallback: no role hint, marking fallback pass complete");
+        setFallbackRoleApplied(true);
+      }
       return;
     }
 
@@ -103,18 +112,9 @@ export default function AuthProvider({ children }) {
     // If not initialized yet
     if (!isInitialized) return true;
     
-    // If user exists and role is being fetched
-    if (user?.email) {
-      // If role is already resolved, not loading
-      if (resolvedRole) return false;
-      
-      // If fallback is applied, not loading
-      if (fallbackRoleApplied) return false;
-      
-      // If role is still loading
-      if (roleLoading || roleFetching || roleUninitialized) {
-        return true;
-      }
+    // If user exists and role is not yet resolved, stay loading
+    if (user?.email && !resolvedRole && !fallbackRoleApplied) {
+      return true;
     }
     
     return false;
@@ -133,10 +133,20 @@ export default function AuthProvider({ children }) {
         if (isMounted.current) {
           console.log("⏰ Force resolving role after timeout");
           const fallback = getFallbackRole(user?.email);
-          setResolvedRole(fallback);
+          if (fallback) {
+            console.log("⏰ Timeout applying fallback role:", fallback);
+            setResolvedRole(fallback);
+          } else {
+            // No email-pattern hint. Don't fabricate a "public" role for
+            // authenticated users; just end loading so callers can proceed
+            // and wait for the real API response.
+            console.log("⏰ Timeout: no fallback role hint; marking fallback pass complete");
+          }
+          // Mark fallback pass done so `isLoading` can resolve to false
           setFallbackRoleApplied(true);
-          setAuthLoading(false);
-          setIsInitialized(true);
+          // Do NOT touch authLoading / isInitialized here — they are owned
+          // by the onAuthStateChanged listener and mutating them here causes
+          // cascading state churn and spurious redirect loops.
         }
       }, 8000);
     } else {
@@ -156,7 +166,7 @@ export default function AuthProvider({ children }) {
   }, [user, isLoading]);
 
   // ===== AUTHENTICATION STATUS =====
-  const isAuthenticated = !!user && !!resolvedRole;
+  const isAuthenticated = !!user;
 
   // ===== LOGGING =====
   useEffect(() => {
@@ -191,8 +201,11 @@ export default function AuthProvider({ children }) {
   const signOutUser = async () => {
     console.log("🔴 Logging out...");
     setIsLoggingOut(true);
+    // Do NOT reset isInitialized — that flag means "we have heard from Firebase
+    // auth at least once", and remains true after sign-out. Resetting it flips
+    // `isLoading` back to true, which freezes ProtectedRoute layouts on the
+    // loading spinner after logout (breaking all navigation/redirects).
     setAuthLoading(false);
-    setIsInitialized(false);
     setFallbackRoleApplied(false);
     setResolvedRole(null);
     

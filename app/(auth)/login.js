@@ -76,10 +76,15 @@ export default function LoginScreen() {
       });
     }
   };
-  // ===== FIXED: Check if user is logged in =====
+  // ===== FIXED: Auto-redirect only when user is already logged in =====
+  // Important: do NOT kick unauthenticated users back to public home.
+  // That would fight the Login button flow (public home → click Login →
+  // login screen → kicked back immediately → appears broken).
   React.useEffect(() => {
-    // Only redirect if not loading and user exists
-    if (!authLoading && user && userRole) {
+    if (authLoading) return;
+
+    // User is already authenticated with a dashboard role → send them to their dashboard.
+    if (user && userRole && ["admin", "teacher", "parent"].includes(userRole)) {
       console.log("✅ User authenticated, redirecting to:", userRole);
       router.replace(getDashboardRouteForRole(userRole));
     }

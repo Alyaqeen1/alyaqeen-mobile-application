@@ -11,16 +11,23 @@ export default function ProtectedRoute({ children, allowedRoles }) {
   const { colors } = useTheme();
 
   useEffect(() => {
-    if (!loading) {
-      if (!user) {
-        router.replace("/(auth)/login");
-      } else if (allowedRoles && !allowedRoles.includes(userRole)) {
-        router.replace(getDashboardRouteForRole(userRole));
-      }
+    // Run redirect logic even while loading if state allows it.
+    // After sign-out, `loading` briefly stays true (because role was cleared).
+    // If we wait for `!loading` with a stale ProtectedRoute mounted, we lock
+    // the user into an unmountable loading spinner and navigation can't escape.
+    if (!user) {
+      router.replace("/(auth)/login");
+      return;
+    }
+    if (!loading && allowedRoles && !allowedRoles.includes(userRole)) {
+      router.replace(getDashboardRouteForRole(userRole));
     }
   }, [user, userRole, loading]);
 
-  if (loading) {
+  // Show loading spinner only when user exists (so we're waiting for their role)
+  // and still loading. If no user, return null immediately; redirect effect above
+  // will take us to login cleanly without rendering a spinner.
+  if (user && loading) {
     return (
       <AppBackground>
         <View style={styles.loadingContainer}>

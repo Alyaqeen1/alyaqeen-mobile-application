@@ -1,13 +1,24 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Drawer } from "expo-router/drawer";
+import { router } from "expo-router";
 import DrawerContent from "../../components/navigation/DrawerContent";
 import CustomHeader from "../../components/navigation/CustomHeader";
 import { useTheme } from "../../contexts";
+import useAuth from "../../hooks/useAuth";
 import AppBackground from "../../components/common/AppBackground";
+import { getDashboardRouteForRole } from "../../utils";
 
 export default function PublicLayout() {
   const { colors } = useTheme();
+  const { user, userRole, loading } = useAuth();
+
+  useEffect(() => {
+    if (loading) return;
+    if (user && userRole && userRole !== "public") {
+      router.replace(getDashboardRouteForRole(userRole));
+    }
+  }, [user, userRole, loading]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

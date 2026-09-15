@@ -1,5 +1,5 @@
 import React from "react";
-import { View, TouchableOpacity, Image, StyleSheet, Platform } from "react-native";
+import { View, TouchableOpacity, Image, StyleSheet, Platform, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../contexts";
@@ -11,7 +11,9 @@ import ThemeToggleButton from "../common/ThemeToggleButton";
 export default function CustomHeader({ navigation }) {
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
-  const { user, signOutUser } = useAuth();
+  const { user, userRole, signOutUser } = useAuth();
+
+  const isPrivilegedRole = ["admin", "teacher", "parent"].includes(userRole);
 
   const handleLogout = async () => {
     try {
@@ -21,12 +23,59 @@ export default function CustomHeader({ navigation }) {
         text1: "Success!",
         text2: "Logged out successfully!",
       });
-      router.replace("/(public)/(tabs)");
+      try {
+        // Explicitly navigate to login after sign-out to bypass any stale
+        // protected-layout render states (ProtectedRoute also redirects, but
+        // this guarantees navigation happens even on fast transitions).
+        router.replace("/(auth)/login");
+      } catch (err) {
+        console.warn("Logout redirect failed:", err?.message || err);
+        try {
+          router.replace("/(public)/(tabs)");
+        } catch (innerErr) {
+          console.warn("Logout fallback redirect also failed:", innerErr?.message || innerErr);
+        }
+      }
     } catch (error) {
       Toast.show({
         type: "error",
         text1: "Logout Failed",
-        text2: error.message,
+        text2: error?.message || String(error),
+      });
+    }
+  };
+
+  const handleLogin = () => {
+    try {
+      // Close drawer first if open to prevent navigation conflicts
+      if (navigation?.canGoBack?.()) {
+        // noop; proceed to navigation
+      }
+      navigation?.closeDrawer?.();
+      // Use a tiny delay to allow drawer close animation to start
+      setTimeout(() => {
+        try {
+          router.push("/(auth)/login");
+        } catch (innerErr) {
+          console.warn("Login nav fallback push failed, trying replace:", innerErr?.message || innerErr);
+          try {
+            router.navigate("/(auth)/login");
+          } catch (finalErr) {
+            console.error("Login navigation completely failed:", finalErr?.message || finalErr);
+            Toast.show({
+              type: "error",
+              text1: "Navigation Error",
+              text2: "Unable to open login screen",
+            });
+          }
+        }
+      }, 50);
+    } catch (err) {
+      console.warn("Login navigation failed:", err?.message || err);
+      Toast.show({
+        type: "error",
+        text1: "Navigation Error",
+        text2: "Unable to open login screen",
       });
     }
   };
@@ -37,7 +86,6 @@ export default function CustomHeader({ navigation }) {
         styles.header,
         {
           paddingTop: insets.top + 8,
-          // Make sure no background is applied
         },
       ]}
     >
@@ -62,7 +110,7 @@ export default function CustomHeader({ navigation }) {
       </View>
       <View style={styles.headerActions}>
         <ThemeToggleButton style={styles.themeButton} />
-        {user && (
+        {isPrivilegedRole ? (
           <TouchableOpacity
             accessibilityRole="button"
             accessibilityLabel="Log out"
@@ -74,6 +122,22 @@ export default function CustomHeader({ navigation }) {
               name="log-out-outline" 
               size={22} 
             />
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Log in"
+            style={styles.loginButton}
+            onPress={handleLogin}
+          >
+            <Ionicons 
+              color={colors.gold} 
+              name="log-in-outline" 
+              size={20} 
+            />
+            <Text style={[styles.loginButtonText, { color: colors.gold }]}>
+              Login
+            </Text>
           </TouchableOpacity>
         )}
       </View>
@@ -115,5 +179,21 @@ const styles = StyleSheet.create({
   themeButton: {
     width: 44,
     height: 44,
+  },
+  loginButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: "rgba(201, 162, 39, 0.3)",
+    backgroundColor: "rgba(201, 162, 39, 0.08)",
+  },
+  loginButtonText: {
+    fontSize: 13,
+    fontWeight: "700",
   },
 });

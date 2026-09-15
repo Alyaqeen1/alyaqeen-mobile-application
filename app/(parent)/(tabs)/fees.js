@@ -7,6 +7,8 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
+  Alert,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,7 +20,11 @@ import {
   useGetFeesByIdQuery,
 } from '../../../redux/features/fees/feesApi';
 import LoadingSpinner from '../../../components/common/LoadingSpinner';
-import PaymentModal from './PaymentModal';
+
+let PaymentModal = null;
+if (Platform.OS !== 'web') {
+  PaymentModal = require('../../../components/modals/PaymentModal').default;
+}
 
 export default function FeesScreen() {
   const { colors } = useTheme();
@@ -207,16 +213,34 @@ export default function FeesScreen() {
             </View>
 
             {/* Pay Button */}
-            <TouchableOpacity
-              style={styles.payButton}
-              onPress={() => setShowPaymentModal(true)}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="card" size={22} color="#fff" />
-              <Text style={styles.payButtonText}>
-                Pay Now - {formatCurrency(totalOutstanding)}
-              </Text>
-            </TouchableOpacity>
+            {Platform.OS === 'web' ? (
+              <TouchableOpacity
+                style={styles.payButton}
+                onPress={() =>
+                  Alert.alert(
+                    'Mobile Only',
+                    'Payments are only available in the native mobile app. Please open the Alyaqeen Academy mobile app to make a payment.'
+                  )
+                }
+                activeOpacity={0.8}
+              >
+                <Ionicons name="phone-portrait" size={22} color="#fff" />
+                <Text style={styles.payButtonText}>
+                  Pay Now - {formatCurrency(totalOutstanding)} (Mobile Only)
+                </Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={styles.payButton}
+                onPress={() => setShowPaymentModal(true)}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="card" size={22} color="#fff" />
+                <Text style={styles.payButtonText}>
+                  Pay Now - {formatCurrency(totalOutstanding)}
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         ) : (
           <View
@@ -238,20 +262,22 @@ export default function FeesScreen() {
         <View style={styles.footer} />
       </ScrollView>
 
-      {/* Payment Modal */}
-      <PaymentModal
-        visible={showPaymentModal}
-        onClose={() => setShowPaymentModal(false)}
-        familyId={familyId}
-        totalAmount={totalOutstanding}
-        unpaidRows={unpaidRows}
-        enrolledFamily={enrolledFamily}
-        formatCurrency={formatCurrency}
-        onSuccess={() => {
-          setShowPaymentModal(false);
-          onRefresh();
-        }}
-      />
+      {/* Payment Modal — native only, Stripe SDK is not available on web */}
+      {Platform.OS !== 'web' && PaymentModal && (
+        <PaymentModal
+          visible={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          familyId={familyId}
+          totalAmount={totalOutstanding}
+          unpaidRows={unpaidRows}
+          enrolledFamily={enrolledFamily}
+          formatCurrency={formatCurrency}
+          onSuccess={() => {
+            setShowPaymentModal(false);
+            onRefresh();
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 }

@@ -1,4 +1,3 @@
-// app/(parent)/tabs/PaymentModal.jsx
 import React, { useState } from 'react';
 import {
   View,
@@ -12,9 +11,9 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useStripe } from '@stripe/stripe-react-native';
-import { useTheme } from '../../../contexts';
-import useAuth from '../../../hooks/useAuth';
-import { useCreateFeeDataMutation } from '../../../redux/features/fees/feesApi';
+import { useTheme } from '../../contexts';
+import useAuth from '../../hooks/useAuth';
+import { useCreateFeeDataMutation } from '../../redux/features/fees/feesApi';
 import Toast from 'react-native-toast-message';
 
 const { width, height } = Dimensions.get('window');
@@ -35,9 +34,7 @@ export default function PaymentModal({
   const [loading, setLoading] = useState(false);
   const [createFeeData] = useCreateFeeDataMutation();
 
-  // ===== FIXED: Build fee students in the correct format =====
   const buildFeeStudents = () => {
-    // Group by student
     const studentMap = {};
     
     unpaidRows.forEach((row) => {
@@ -71,84 +68,79 @@ export default function PaymentModal({
       });
     });
 
-    // Convert to array and format subtotal
     return Object.values(studentMap).map((stu) => ({
       ...stu,
       subtotal: parseFloat(stu.subtotal.toFixed(2)),
     }));
   };
 
-  // ===== FIXED: Save fee record with correct format =====
-// In PaymentModal.jsx - Fix the saveFeeRecord function
+  const saveFeeRecord = async (transactionId = null) => {
+    try {
+      const feeStudents = buildFeeStudents();
+      const grandTotal = unpaidRows.reduce((acc, row) => acc + row.totalAmount, 0);
 
-const saveFeeRecord = async (transactionId = null) => {
-  try {
-    const feeStudents = buildFeeStudents();
-    const grandTotal = unpaidRows.reduce((acc, row) => acc + row.totalAmount, 0);
+      console.log('💰 Saving fee record with correct format...');
+      console.log('👨‍🎓 Students:', JSON.stringify(feeStudents, null, 2));
 
-    console.log('💰 Saving fee record with correct format...');
-    console.log('👨‍🎓 Students:', JSON.stringify(feeStudents, null, 2));
-
-    const paymentData = {
-      familyId: familyId,
-      name: user?.displayName || 'Parent',
-      email: user?.email,
-      paymentType: 'monthly',
-      status: 'paid',
-      students: feeStudents,
-      expectedTotal: grandTotal,
-      remaining: 0,
-      payments: [
-        {
-          amount: grandTotal,
-          method: 'instant',
-          date: new Date().toISOString().split('T')[0],
-          transactionId: transactionId,
-        },
-      ],
-    };
-
-    console.log('📤 Sending payment data:', JSON.stringify(paymentData, null, 2));
-
-    const result = await createFeeData(paymentData).unwrap();
-    console.log('✅ CreateFeeData result:', result);
-
-    // ===== FIXED: Check for insertedIds (array) instead of insertedId =====
-    if (result && result.insertedIds && result.insertedIds.length > 0) {
-      Toast.show({
-        type: 'success',
-        text1: 'Payment Successful! 🎉',
-        text2: `Your payment of ${formatCurrency(grandTotal)} has been processed.`,
-      });
-      
-      Alert.alert(
-        'Payment Successful! 🎉',
-        `Your payment of ${formatCurrency(grandTotal)} has been processed successfully.`,
-        [
+      const paymentData = {
+        familyId: familyId,
+        name: user?.displayName || 'Parent',
+        email: user?.email,
+        paymentType: 'monthly',
+        status: 'paid',
+        students: feeStudents,
+        expectedTotal: grandTotal,
+        remaining: 0,
+        payments: [
           {
-            text: 'OK',
-            onPress: () => {
-              onSuccess?.();
-              onClose();
-            },
+            amount: grandTotal,
+            method: 'instant',
+            date: new Date().toISOString().split('T')[0],
+            transactionId: transactionId,
           },
-        ]
-      );
-      return true;
-    } else {
-      throw new Error('Failed to save fee record - no insertedIds');
+        ],
+      };
+
+      console.log('📤 Sending payment data:', JSON.stringify(paymentData, null, 2));
+
+      const result = await createFeeData(paymentData).unwrap();
+      console.log('✅ CreateFeeData result:', result);
+
+      if (result && result.insertedIds && result.insertedIds.length > 0) {
+        Toast.show({
+          type: 'success',
+          text1: 'Payment Successful! 🎉',
+          text2: `Your payment of ${formatCurrency(grandTotal)} has been processed.`,
+        });
+        
+        Alert.alert(
+          'Payment Successful! 🎉',
+          `Your payment of ${formatCurrency(grandTotal)} has been processed successfully.`,
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                onSuccess?.();
+                onClose();
+              },
+            },
+          ]
+        );
+        return true;
+      } else {
+        throw new Error('Failed to save fee record - no insertedIds');
+      }
+    } catch (error) {
+      console.error('❌ Save fee error:', error);
+      console.error('❌ Error data:', error?.data);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error?.data?.message || error?.message || 'Failed to save payment record',
+      });
+      return false;
     }
-  } catch (error) {
-    console.error('❌ Save fee error:', error);
-    console.error('❌ Error data:', error?.data);
-    Toast.show({
-      type: 'error',
-      text1: 'Error',
-      text2: error?.data?.message || error?.message || 'Failed to save payment record',
-    });
-    return false;
-  }
-};
+  };
 
   const handlePayment = async () => {
     if (totalAmount <= 0) {
@@ -159,7 +151,6 @@ const saveFeeRecord = async (transactionId = null) => {
     setLoading(true);
 
     try {
-      // 1. Create payment intent
       const response = await fetch(`${EXPO_PUBLIC_URL}/create-payment-intent`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -181,7 +172,6 @@ const saveFeeRecord = async (transactionId = null) => {
         throw new Error('Failed to create payment intent');
       }
 
-      // 2. Initialize payment sheet
       const { error: initError } = await initPaymentSheet({
         paymentIntentClientSecret: data.clientSecret,
         merchantDisplayName: 'Alyaqeen Academy',
@@ -202,7 +192,6 @@ const saveFeeRecord = async (transactionId = null) => {
         return;
       }
 
-      // 3. Present payment sheet
       const { error: presentError } = await presentPaymentSheet();
 
       if (presentError) {
@@ -216,7 +205,6 @@ const saveFeeRecord = async (transactionId = null) => {
         return;
       }
 
-      // 4. Payment successful - save fee record with correct format
       const saved = await saveFeeRecord(data.paymentIntentId);
       setLoading(false);
       

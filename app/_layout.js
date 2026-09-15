@@ -1,6 +1,7 @@
-// RootLayout.jsx - Keep it exactly like this (no StripeProvider)
+// RootLayout.jsx
 import React, { useState, useEffect } from "react";
 import { Stack } from "expo-router";
+import { Platform } from "react-native";
 import { Provider } from "react-redux";
 import { store } from "../redux/store";
 import SplashScreen from "../components/common/SplashScreen";
@@ -10,7 +11,11 @@ import AuthProvider from "../contexts/AuthContext";
 import Toast from "react-native-toast-message";
 import * as ExpoSplashScreen from "expo-splash-screen";
 import "../global.css";
-import { StripeProvider } from '@stripe/stripe-react-native';
+
+let StripeProvider = null;
+if (Platform.OS !== "web") {
+  StripeProvider = require("@stripe/stripe-react-native").StripeProvider;
+}
 
 let splashCompletedGuard = false;
 ExpoSplashScreen.preventAutoHideAsync().catch(() => {});
@@ -41,25 +46,34 @@ function ThemedApp() {
   );
 }
 
+function AppShell({ children }) {
+  if (Platform.OS !== "web" && StripeProvider) {
+    return (
+      <StripeProvider
+        publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY}
+        merchantIdentifier="merchant.identifier"
+        urlScheme="alyaqeen"
+      >
+        {children}
+      </StripeProvider>
+    );
+  }
+  return children;
+}
+
 export default function RootLayout() {
   return (
-      <StripeProvider
-      publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY}
-      merchantIdentifier="merchant.identifier" // required for Apple Pay
-      urlScheme="your-url-scheme" // required for 3D Secure and bank redirects
-    >
-  <GestureHandlerRootView style={{ flex: 1 }}>
-      <Provider store={store}>
-        <AuthProvider>
-          <ThemeProvider>
-            <ThemedApp />
-            <Toast />
-          </ThemeProvider>
-        </AuthProvider>
-      </Provider>
-    </GestureHandlerRootView>
-      {/* Your app code here */}
-    </StripeProvider>
-  
+    <AppShell>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <Provider store={store}>
+          <AuthProvider>
+            <ThemeProvider>
+              <ThemedApp />
+              <Toast />
+            </ThemeProvider>
+          </AuthProvider>
+        </Provider>
+      </GestureHandlerRootView>
+    </AppShell>
   );
 }

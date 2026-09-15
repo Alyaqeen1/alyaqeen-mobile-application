@@ -62,17 +62,6 @@ export default function ParentTabsLayout() {
         }}
       />
 
-      {/* Notifications Tab */}
-      <Tabs.Screen
-        name="notifications"
-        options={{
-          title: "Alerts",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="notifications-outline" size={size} color={color} />
-          ),
-        }}
-      />
-
       {/* Profile Tab */}
       <Tabs.Screen
         name="profile"

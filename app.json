@@ -4,28 +4,28 @@
     "slug": "alyaqeen-mobile-application",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/main.png",
+    "icon": "./assets/adaptive-foreground.png",
     "scheme": "alyaqeen",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/main.png",
+      "image": "./assets/adaptive-foreground.png",
       "resizeMode": "contain",
-      "backgroundColor": "#F8F5EE"
+      "backgroundColor": "#ffffff"
     },
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/main.png",
+        "foregroundImage": "./assets/adaptive-foreground.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
       "package": "com.sadia45.alyaqeenmobileapplication"
     },
     "web": {
-      "favicon": "./assets/main.png",
+      "favicon": "./assets/adaptive-foreground.png",
       "bundler": "metro"
     },
     "plugins": [
