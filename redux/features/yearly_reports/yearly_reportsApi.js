@@ -64,6 +64,23 @@ export const yearlyReportsApi = apiSlice.injectEndpoints({
       },
     }),
 
+    // ==================== GET TERM PROGRESS ====================  ✅ NEW
+    getTermProgress: builder.query({
+      query: ({ studentId, year, term }) => {
+        const params = new URLSearchParams();
+        if (year) params.set("year", year);
+        if (term) params.set("term", term);
+
+        return {
+          url: `/yearly-reports/student/${studentId}/term`,
+          params: params,
+        };
+      },
+      providesTags: (result, error, { studentId }) => [
+        { type: "YearlyReport", id: `term-${studentId}` },
+      ],
+    }),
+
     // ==================== CREATE NEW REPORT ====================
     createYearlyReport: builder.mutation({
       query: (reportData) => ({
@@ -141,6 +158,7 @@ export const {
   useGetStudentYearlyReportsQuery,
   useGetBeginningOfYearQuery,
   useGetEndOfYearQuery,
+  useGetTermProgressQuery, // ✅ NEW
   useGetStudentsMissingBeginningReportQuery,
 
   // Mutations
